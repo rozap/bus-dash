@@ -4,138 +4,193 @@
       * press reset each time to program
     * pin3 has to be OFF to run program
     * need delay on powerup or else it doesn't work at all
+   * println is over Serial1. The following works:
+      void setup() {
+        while (!Serial1);
+        Serial1.begin(115200);
+      }
+
+      void loop() {
+        // Serial1.println("Working");
+        delay(500);
+      }
 
 */
 
 #include <Arduino.h>
-#include <TFT_eSPI.h> // Hardware-specific library
+#include <TFT_eSPI.h>
 #include <SPI.h>
+
 // CircularBuffer<double,WINDOW_SIZE> fuelWindow;
-#define LCD_CS PA_4
-#define LCD_CD PA_0
-#define LCD_MOSI PA_7
-#define LCD_MISO PA_6
-#define LCD_RESET PA_1
-#define LCD_CLK PA_5
 
 #define WIDTH 320
 #define HEIGHT 240
 
-#define BAR_HEIGHT 10
+#define BAR_HEIGHT 8
 #define WUT ILI9341_CYAN
 
-
 // 16 bit TFT, 5 bits red, 6 green, 5 blue
-#define BACKGROUND_COLOR ((8 >> 3) << 11) | ( (8 >> 2) << 5) | (8 >> 3)
+#define BACKGROUND_COLOR ((8 >> 3) << 11) | ((8 >> 2) << 5) | (8 >> 3)
 #define BAR_COLOR ILI9341_CYAN
 
+struct SpeeduinoStatus
+{
+  uint8_t secl;
+  uint8_t status1;
+  uint8_t engine;
+  uint8_t dwell;
+  uint16_t MAP;
+  uint8_t IAT;
+  uint8_t coolant;
+  uint8_t batCorrection;
+  uint8_t battery10;
+  uint8_t O2;
+  uint8_t egoCorrection;
+  uint8_t iatCorrection;
+  uint8_t wueCorrection;
+  uint16_t RPM;
+  uint8_t TAEamount;
+  uint8_t corrections;
+  uint8_t ve;
+  uint8_t afrTarget;
+  uint16_t PW1;
+  uint8_t tpsDOT;
+  uint8_t advance;
+  uint8_t TPS;
+  uint16_t loopsPerSecond;
+  uint16_t freeRAM;
+  uint8_t boostTarget;
+  uint8_t boostDuty;
+  uint8_t spark;
+  uint16_t rpmDOT;
+  uint8_t ethanolPct;
+  uint8_t flexCorrection;
+  uint8_t flexIgnCorrection;
+  uint8_t idleLoad;
+  uint8_t testOutputs;
+  uint8_t O2_2;
+  uint8_t baro;
+  uint16_t CANin_1;
+  uint16_t CANin_2;
+  uint16_t CANin_3;
+  uint16_t CANin_4;
+  uint16_t CANin_5;
+  uint16_t CANin_6;
+  uint16_t CANin_7;
+  uint16_t CANin_8;
+  uint16_t CANin_9;
+  uint16_t CANin_10;
+  uint16_t CANin_11;
+  uint16_t CANin_12;
+  uint16_t CANin_13;
+  uint16_t CANin_14;
+  uint16_t CANin_15;
+  uint16_t CANin_16;
+  uint8_t tpsADC;
+  uint8_t getNextError;
+  uint8_t launchCorrection;
+  uint16_t PW2;
+  uint16_t PW3;
+  uint16_t PW4;
+  uint8_t status3;
+  uint8_t engineProtectStatus;
+  uint8_t fuelLoad;
+  uint8_t ignLoad;
+  uint8_t injAngle;
+  uint8_t idleDuty;
+  uint8_t CLIdleTarget;
+  uint8_t mapDOT;
+  uint8_t vvt1Angle;
+  uint8_t vvt1TargetAngle;
+  uint8_t vvt1Duty;
+  uint8_t flexBoostCorrection;
+  uint8_t baroCorrection;
+  uint8_t ASEValue;
+  uint8_t vss;
+  uint8_t gear;
+  uint8_t fuelPressure;
+  uint8_t oilPressure;
+  uint8_t wmiPW;
+  uint8_t status4;
+  uint8_t vvt2Angle;
+  uint8_t vvt2TargetAngle;
+  uint8_t vvt2Duty;
+  uint8_t outputsStatus;
+  uint8_t fuelTemp;
+  uint8_t fuelTempCorrection;
+  uint8_t VE1;
+  uint8_t VE2;
+  uint8_t advance1;
+  uint8_t advance2;
+  uint8_t nitrous_status;
+  uint8_t TS_SD_Status;
+};
+SpeeduinoStatus currentStatus;
 
-TFT_eSPI tft = TFT_eSPI();       // Invoke custom library
+TFT_eSPI tft = TFT_eSPI();
 
-long i = 0;
-
-
-void showGauge(int value, int min, int max, int color) {
+void showGauge(int value, int min, int max, int color)
+{
   int width = map(value, min, max, 0, tft.width());
   tft.fillRect(0, tft.getCursorY(), tft.width(), BAR_HEIGHT, BACKGROUND_COLOR);
 
   // WIDTH / (max - min)
   tft.fillRect(
-    0, tft.getCursorY(),
-    width, BAR_HEIGHT,
-    color
-  );
+      0, tft.getCursorY(),
+      width, BAR_HEIGHT,
+      color);
   tft.println();
 }
 
-int readFuel() {
+long i = 0;
+int readFuel()
+{
   return sin(i * 0.005) * 100;
   // return random(0, 100);
 }
 
-
-int readRPM() {
+int readRPM()
+{
   return random(2000, 6000);
 }
 
-float readBat() {
+float readBat()
+{
   return random(12, 14);
 }
 
-float readCoolant() {
+float readCoolant()
+{
   return random(180, 200);
 }
 
-float readAF() {
+float readAF()
+{
   return random(13.0, 15.0);
 }
 
-float readTiming() {
+float readTiming()
+{
   return random(5, 15);
 }
 
-int readIAT() {
+int readIAT()
+{
   return random(50, 80);
 }
 
-
-void setup() {
-  // put your setup code here, to run once:
-  // Serial.begin(115200);
-  // while (!Serial) {
-  // }
-  // SPI.begin();
-  // SPI.setClockDivider(SPI_CLOCK_DIV2);
-
-  tft.begin();
-  tft.fillScreen(BACKGROUND_COLOR);
-
+void writeStatus(int bottomPanelY)
+{
+  tft.setCursor(WIDTH / 2 + 8, bottomPanelY);
+  tft.print("ALL OK :)");
 }
 
-
-void loop(void) {
-  tft.setTextSize(3);
-  tft.setRotation(3);
-
-  tft.setCursor(0, 0);
-  tft.setTextColor(ILI9341_WHITE, BACKGROUND_COLOR);
-  tft.print("FUEL     ");
-  int fuel = readFuel();
-  tft.println(fuel);
-  showGauge(fuel, 0, 100, BAR_COLOR);
-
-  i++;
-
-  tft.setTextColor(ILI9341_WHITE, BACKGROUND_COLOR);
-  tft.print("RPM      ");
-  int rpm = readRPM();
-  tft.println(rpm);
-  showGauge(rpm, 500, 7000, BAR_COLOR);
-
-  tft.setTextColor(ILI9341_WHITE, BACKGROUND_COLOR);
-  tft.print("COOLANT ");
-  int coolant = readCoolant();
-  tft.println(coolant);
-  showGauge(coolant, 50, 250, BAR_COLOR);
-
-  tft.setTextColor(ILI9341_WHITE, BACKGROUND_COLOR);
-  tft.print("BAT     ");
-  float volts = readBat();
-  tft.println(volts);
-  showGauge((int)(volts * 100), 100, 150, BAR_COLOR);
-
-
-  tft.drawLine(WIDTH/2, tft.getCursorY(), WIDTH/2, HEIGHT, ILI9341_WHITE);
-
-
-
-  tft.setTextSize(2);
-
+void writeSecondaries(int bottomPanelY)
+{
   tft.setTextColor(ILI9341_WHITE, BACKGROUND_COLOR);
   tft.print("A/F     ");
   float af = readAF();
   tft.println(af);
-
 
   tft.setTextColor(ILI9341_WHITE, BACKGROUND_COLOR);
   tft.print("TIMING  ");
@@ -144,307 +199,337 @@ void loop(void) {
   tft.setTextColor(ILI9341_WHITE, BACKGROUND_COLOR);
   tft.print("IAT     ");
   tft.println(readIAT());
-
 }
 
-// /*
-//   Example animated analogue meters using a ILI9341 TFT LCD screen
-
-//   Needs Font 2 (also Font 4 if using large scale label)
-
-//   Make sure all the display driver and pin connections are correct by
-//   editing the User_Setup.h file in the TFT_eSPI library folder.
-
-//   #########################################################################
-//   ###### DON'T FORGET TO UPDATE THE User_Setup.h FILE IN THE LIBRARY ######
-//   #########################################################################
-// */
-
-
-
-
-// TFT_eSPI tft = TFT_eSPI();       // Invoke custom library
-
-// #define TFT_GREY 0x5AEB
-
-// #define LOOP_PERIOD 35 // Display updates every 35 ms
-
-// float ltx = 0;    // Saved x coord of bottom of needle
-// uint16_t osx = 120, osy = 120; // Saved x & y coords
-// uint32_t updateTime = 0;       // time for next update
-
-// int old_analog =  -999; // Value last displayed
-// int old_digital = -999; // Value last displayed
-
-// int value[6] = {0, 0, 0, 0, 0, 0};
-// int old_value[6] = { -1, -1, -1, -1, -1, -1};
-// int d = 0;
-
-
-
-// // #########################################################################
-// // Update needle position
-// // This function is blocking while needle moves, time depends on ms_delay
-// // 10ms minimises needle flicker if text is drawn within needle sweep area
-// // Smaller values OK if text not in sweep area, zero for instant movement but
-// // does not look realistic... (note: 100 increments for full scale deflection)
-// // #########################################################################
-// void plotNeedle(int value, byte ms_delay)
-// {
-//   tft.setTextColor(TFT_BLACK, TFT_WHITE);
-//   char buf[8]; dtostrf(value, 4, 0, buf);
-//   tft.drawRightString(buf, 40, 119 - 20, 2);
-
-//   if (value < -10) value = -10; // Limit value to emulate needle end stops
-//   if (value > 110) value = 110;
-
-//   // Move the needle util new value reached
-//   while (!(value == old_analog)) {
-//     if (old_analog < value) old_analog++;
-//     else old_analog--;
-
-//     if (ms_delay == 0) old_analog = value; // Update immediately id delay is 0
-
-//     float sdeg = map(old_analog, -10, 110, -150, -30); // Map value to angle
-//     // Calcualte tip of needle coords
-//     float sx = cos(sdeg * 0.0174532925);
-//     float sy = sin(sdeg * 0.0174532925);
-
-//     // Calculate x delta of needle start (does not start at pivot point)
-//     float tx = tan((sdeg + 90) * 0.0174532925);
-
-//     // Erase old needle image
-//     tft.drawLine(120 + 20 * ltx - 1, 140 - 20, osx - 1, osy, TFT_WHITE);
-//     tft.drawLine(120 + 20 * ltx, 140 - 20, osx, osy, TFT_WHITE);
-//     tft.drawLine(120 + 20 * ltx + 1, 140 - 20, osx + 1, osy, TFT_WHITE);
-
-//     // Re-plot text under needle
-//     tft.setTextColor(TFT_BLACK);
-//     tft.drawCentreString("%RH", 120, 70, 4); // // Comment out to avoid font 4
-
-//     // Store new needle end coords for next erase
-//     ltx = tx;
-//     osx = sx * 98 + 120;
-//     osy = sy * 98 + 140;
-
-//     // Draw the needle in the new postion, magenta makes needle a bit bolder
-//     // draws 3 lines to thicken needle
-//     tft.drawLine(120 + 20 * ltx - 1, 140 - 20, osx - 1, osy, TFT_RED);
-//     tft.drawLine(120 + 20 * ltx, 140 - 20, osx, osy, TFT_MAGENTA);
-//     tft.drawLine(120 + 20 * ltx + 1, 140 - 20, osx + 1, osy, TFT_RED);
-
-//     // Slow needle down slightly as it approaches new postion
-//     if (abs(old_analog - value) < 10) ms_delay += ms_delay / 5;
-
-//     // Wait before next update
-//     delay(ms_delay);
-//   }
-// }
-
-// // #########################################################################
-// //  Draw a linear meter on the screen
-// // #########################################################################
-// void plotLinear(char *label, int x, int y)
-// {
-//   int w = 36;
-//   tft.drawRect(x, y, w, 155, TFT_GREY);
-//   tft.fillRect(x + 2, y + 19, w - 3, 155 - 38, TFT_WHITE);
-//   tft.setTextColor(TFT_CYAN, TFT_BLACK);
-//   tft.drawCentreString(label, x + w / 2, y + 2, 2);
-
-//   for (int i = 0; i < 110; i += 10)
-//   {
-//     tft.drawFastHLine(x + 20, y + 27 + i, 6, TFT_BLACK);
-//   }
-
-//   for (int i = 0; i < 110; i += 50)
-//   {
-//     tft.drawFastHLine(x + 20, y + 27 + i, 9, TFT_BLACK);
-//   }
-
-//   tft.fillTriangle(x + 3, y + 127, x + 3 + 16, y + 127, x + 3, y + 127 - 5, TFT_RED);
-//   tft.fillTriangle(x + 3, y + 127, x + 3 + 16, y + 127, x + 3, y + 127 + 5, TFT_RED);
-
-//   tft.drawCentreString("---", x + w / 2, y + 155 - 18, 2);
-// }
-
-// // #########################################################################
-// //  Adjust 6 linear meter pointer positions
-// // #########################################################################
-// void plotPointer(void)
-// {
-//   int dy = 187;
-//   byte pw = 16;
-
-//   tft.setTextColor(TFT_GREEN, TFT_BLACK);
-
-//   // Move the 6 pointers one pixel towards new value
-//   for (int i = 0; i < 6; i++)
-//   {
-//     char buf[8]; dtostrf(value[i], 4, 0, buf);
-//     tft.drawRightString(buf, i * 40 + 36 - 5, 187 - 27 + 155 - 18, 2);
-
-//     int dx = 3 + 40 * i;
-//     if (value[i] < 0) value[i] = 0; // Limit value to emulate needle end stops
-//     if (value[i] > 100) value[i] = 100;
-
-//     while (!(value[i] == old_value[i])) {
-//       dy = 187 + 100 - old_value[i];
-//       if (old_value[i] > value[i])
-//       {
-//         tft.drawLine(dx, dy - 5, dx + pw, dy, TFT_WHITE);
-//         old_value[i]--;
-//         tft.drawLine(dx, dy + 6, dx + pw, dy + 1, TFT_RED);
-//       }
-//       else
-//       {
-//         tft.drawLine(dx, dy + 5, dx + pw, dy, TFT_WHITE);
-//         old_value[i]++;
-//         tft.drawLine(dx, dy - 6, dx + pw, dy - 1, TFT_RED);
-//       }
-//     }
-//   }
-// }
-
-
-
-
-// // #########################################################################
-// //  Draw the analogue meter on the screen
-// // #########################################################################
-// void analogMeter()
-// {
-//   // Meter outline
-//   tft.fillRect(0, 0, 239, 126, TFT_GREY);
-//   tft.fillRect(5, 3, 230, 119, TFT_WHITE);
-
-//   tft.setTextColor(TFT_BLACK);  // Text colour
-
-//   // Draw ticks every 5 degrees from -50 to +50 degrees (100 deg. FSD swing)
-//   for (int i = -50; i < 51; i += 5) {
-//     // Long scale tick length
-//     int tl = 15;
-
-//     // Coodinates of tick to draw
-//     float sx = cos((i - 90) * 0.0174532925);
-//     float sy = sin((i - 90) * 0.0174532925);
-//     uint16_t x0 = sx * (100 + tl) + 120;
-//     uint16_t y0 = sy * (100 + tl) + 140;
-//     uint16_t x1 = sx * 100 + 120;
-//     uint16_t y1 = sy * 100 + 140;
-
-//     // Coordinates of next tick for zone fill
-//     float sx2 = cos((i + 5 - 90) * 0.0174532925);
-//     float sy2 = sin((i + 5 - 90) * 0.0174532925);
-//     int x2 = sx2 * (100 + tl) + 120;
-//     int y2 = sy2 * (100 + tl) + 140;
-//     int x3 = sx2 * 100 + 120;
-//     int y3 = sy2 * 100 + 140;
-
-//     // Yellow zone limits
-//     //if (i >= -50 && i < 0) {
-//     //  tft.fillTriangle(x0, y0, x1, y1, x2, y2, TFT_YELLOW);
-//     //  tft.fillTriangle(x1, y1, x2, y2, x3, y3, TFT_YELLOW);
-//     //}
-
-//     // Green zone limits
-//     if (i >= 0 && i < 25) {
-//       tft.fillTriangle(x0, y0, x1, y1, x2, y2, TFT_GREEN);
-//       tft.fillTriangle(x1, y1, x2, y2, x3, y3, TFT_GREEN);
-//     }
-
-//     // Orange zone limits
-//     if (i >= 25 && i < 50) {
-//       tft.fillTriangle(x0, y0, x1, y1, x2, y2, TFT_ORANGE);
-//       tft.fillTriangle(x1, y1, x2, y2, x3, y3, TFT_ORANGE);
-//     }
-
-//     // Short scale tick length
-//     if (i % 25 != 0) tl = 8;
-
-//     // Recalculate coords incase tick lenght changed
-//     x0 = sx * (100 + tl) + 120;
-//     y0 = sy * (100 + tl) + 140;
-//     x1 = sx * 100 + 120;
-//     y1 = sy * 100 + 140;
-
-//     // Draw tick
-//     tft.drawLine(x0, y0, x1, y1, TFT_BLACK);
-
-//     // Check if labels should be drawn, with position tweaks
-//     if (i % 25 == 0) {
-//       // Calculate label positions
-//       x0 = sx * (100 + tl + 10) + 120;
-//       y0 = sy * (100 + tl + 10) + 140;
-//       switch (i / 25) {
-//         case -2: tft.drawCentreString("0", x0, y0 - 12, 2); break;
-//         case -1: tft.drawCentreString("25", x0, y0 - 9, 2); break;
-//         case 0: tft.drawCentreString("50", x0, y0 - 6, 2); break;
-//         case 1: tft.drawCentreString("75", x0, y0 - 9, 2); break;
-//         case 2: tft.drawCentreString("100", x0, y0 - 12, 2); break;
-//       }
-//     }
-
-//     // Now draw the arc of the scale
-//     sx = cos((i + 5 - 90) * 0.0174532925);
-//     sy = sin((i + 5 - 90) * 0.0174532925);
-//     x0 = sx * 100 + 120;
-//     y0 = sy * 100 + 140;
-//     // Draw scale arc, don't draw the last part
-//     if (i < 50) tft.drawLine(x0, y0, x1, y1, TFT_BLACK);
-//   }
-
-//   tft.drawString("%RH", 5 + 230 - 40, 119 - 20, 2); // Units at bottom right
-//   tft.drawCentreString("%RH", 120, 70, 4); // Comment out to avoid font 4
-//   tft.drawRect(5, 3, 230, 119, TFT_BLACK); // Draw bezel line
-
-//   plotNeedle(0, 0); // Put meter needle at 0
-// }
-
-
-// void setup(void) {
-//   delay(1000);
-
-//   tft.init();
-//   tft.setRotation(3);
-//   Serial.begin(57600); // For debug
-//   tft.fillScreen(TFT_BLACK);
-
-//   // analogMeter(); // Draw analogue meter
-
-//   byte width = (int)(WIDTH / 4);
-//   int y = (int)(HEIGHT / 2);
-//   plotLinear("FUEL", 1 * width, y);
-//   plotLinear("BAT", 2 * width, y);
-//   plotLinear("COOLANT", 3 * width, y);
-//   plotLinear("OIL PRES", 4 * width, y);
-//   // plotLinear("A5", 5 * width, 160);
-
-//   updateTime = millis(); // Next update time
-// }
-
-// void loop() {
-//   if (updateTime <= millis()) {
-//     updateTime = millis() + LOOP_PERIOD;
-
-//     d += 4; if (d >= 360) d = 0;
-
-//     //value[0] = map(analogRead(A0), 0, 1023, 0, 100); // Test with value form Analogue 0
-
-//     // Create a Sine wave for testing
-//     value[0] = 50 + 50 * sin((d + 0) * 0.0174532925);
-//     value[1] = 50 + 50 * sin((d + 60) * 0.0174532925);
-//     value[2] = 50 + 50 * sin((d + 120) * 0.0174532925);
-//     value[3] = 50 + 50 * sin((d + 180) * 0.0174532925);
-//     value[4] = 50 + 50 * sin((d + 240) * 0.0174532925);
-//     value[5] = 50 + 50 * sin((d + 300) * 0.0174532925);
-
-//     //unsigned long t = millis();
-
-//     // plotPointer();
-
-//     // plotNeedle(value[0], 0);
-
-//     //Serial.println(millis()-t); // Print time taken for meter update
-//   }
-// }
+struct Colors
+{
+  int bar;
+  int background;
+  int text;
+} okColors, errorColors;
+
+void renderGauge(const char *text, int value, int min, int max, Colors colors)
+{
+  tft.setTextSize(2);
+  tft.setTextColor(ILI9341_WHITE, BACKGROUND_COLOR);
+  tft.print(text);
+  tft.print(" ");
+  tft.print(value);
+  tft.println("            ");
+  showGauge(value, 0, 100, BAR_COLOR);
+}
+
+#define NOTHING_RECEIVED 0
+#define R_MESSAGE 1
+#define N_MESSAGE 110
+static uint32_t oldtime = millis(); // for the timeout
+uint8_t serialState;
+uint8_t currentCommand;
+uint8_t speeduinoResponse[120];
+bool requiresRender = false;
+
+uint8_t screenState = 0;
+uint8_t lastScreenState = 0;
+#define SCREEN_STATE_NO_DATA 1
+#define SCREEN_STATE_NORMAL 0
+
+void requestData()
+{
+  Serial2.write("n"); // Send n to request real time data
+  // Serial1.println("wrote n");
+}
+
+void processResponse()
+{
+  currentStatus.secl = speeduinoResponse[0];
+  currentStatus.status1 = speeduinoResponse[1];
+  currentStatus.engine = speeduinoResponse[2];
+  currentStatus.dwell = speeduinoResponse[3];
+  currentStatus.MAP = ((speeduinoResponse[5] << 8) | (speeduinoResponse[4]));
+  currentStatus.IAT = speeduinoResponse[6];
+  currentStatus.coolant = speeduinoResponse[7] - 40;
+  currentStatus.batCorrection = speeduinoResponse[8];
+  currentStatus.battery10 = speeduinoResponse[9];
+  currentStatus.O2 = speeduinoResponse[10];
+  currentStatus.egoCorrection = speeduinoResponse[11];
+  currentStatus.iatCorrection = speeduinoResponse[12];
+  currentStatus.wueCorrection = speeduinoResponse[13];
+
+  currentStatus.RPM = ((speeduinoResponse[15] << 8) | (speeduinoResponse[14]));
+
+  currentStatus.TAEamount = speeduinoResponse[16];
+  currentStatus.corrections = speeduinoResponse[17];
+  currentStatus.ve = speeduinoResponse[18];
+  currentStatus.afrTarget = speeduinoResponse[19];
+
+  currentStatus.PW1 = ((speeduinoResponse[21] << 8) | (speeduinoResponse[20]));
+
+  currentStatus.tpsDOT = speeduinoResponse[22];
+  currentStatus.advance = speeduinoResponse[23];
+  currentStatus.TPS = speeduinoResponse[24];
+
+  currentStatus.loopsPerSecond = ((speeduinoResponse[26] << 8) | (speeduinoResponse[25]));
+  currentStatus.freeRAM = ((speeduinoResponse[28] << 8) | (speeduinoResponse[27]));
+
+  currentStatus.boostTarget = speeduinoResponse[29];
+  currentStatus.boostDuty = speeduinoResponse[30];
+  currentStatus.spark = speeduinoResponse[31];
+
+  currentStatus.rpmDOT = ((speeduinoResponse[33] << 8) | (speeduinoResponse[32]));
+  currentStatus.ethanolPct = speeduinoResponse[34];
+
+  currentStatus.flexCorrection = speeduinoResponse[35];
+  currentStatus.flexIgnCorrection = speeduinoResponse[36];
+  currentStatus.idleLoad = speeduinoResponse[37];
+  currentStatus.testOutputs = speeduinoResponse[38];
+  currentStatus.O2_2 = speeduinoResponse[39];
+  currentStatus.baro = speeduinoResponse[40];
+  currentStatus.CANin_1 = ((speeduinoResponse[42] << 8) | (speeduinoResponse[41]));
+  currentStatus.CANin_2 = ((speeduinoResponse[44] << 8) | (speeduinoResponse[43]));
+  currentStatus.CANin_3 = ((speeduinoResponse[46] << 8) | (speeduinoResponse[45]));
+  currentStatus.CANin_4 = ((speeduinoResponse[48] << 8) | (speeduinoResponse[47]));
+  currentStatus.CANin_5 = ((speeduinoResponse[50] << 8) | (speeduinoResponse[49]));
+  currentStatus.CANin_6 = ((speeduinoResponse[52] << 8) | (speeduinoResponse[51]));
+  currentStatus.CANin_7 = ((speeduinoResponse[54] << 8) | (speeduinoResponse[53]));
+  currentStatus.CANin_8 = ((speeduinoResponse[56] << 8) | (speeduinoResponse[55]));
+  currentStatus.CANin_9 = ((speeduinoResponse[58] << 8) | (speeduinoResponse[57]));
+  currentStatus.CANin_10 = ((speeduinoResponse[60] << 8) | (speeduinoResponse[59]));
+  currentStatus.CANin_11 = ((speeduinoResponse[62] << 8) | (speeduinoResponse[61]));
+  currentStatus.CANin_12 = ((speeduinoResponse[64] << 8) | (speeduinoResponse[63]));
+  currentStatus.CANin_13 = ((speeduinoResponse[66] << 8) | (speeduinoResponse[65]));
+  currentStatus.CANin_14 = ((speeduinoResponse[68] << 8) | (speeduinoResponse[67]));
+  currentStatus.CANin_15 = ((speeduinoResponse[70] << 8) | (speeduinoResponse[69]));
+  currentStatus.CANin_16 = ((speeduinoResponse[72] << 8) | (speeduinoResponse[71]));
+  currentStatus.tpsADC = speeduinoResponse[73];
+  currentStatus.getNextError = speeduinoResponse[74];
+  currentStatus.launchCorrection = speeduinoResponse[75];
+  currentStatus.PW2 = ((speeduinoResponse[77] << 8) | (speeduinoResponse[76]));
+  currentStatus.PW3 = ((speeduinoResponse[79] << 8) | (speeduinoResponse[78]));
+  currentStatus.PW4 = ((speeduinoResponse[81] << 8) | (speeduinoResponse[80]));
+  currentStatus.status3 = speeduinoResponse[82];
+  currentStatus.engineProtectStatus = speeduinoResponse[83];
+  currentStatus.fuelLoad = ((speeduinoResponse[85] << 8) | (speeduinoResponse[84]));
+  currentStatus.ignLoad = ((speeduinoResponse[87] << 8) | (speeduinoResponse[86]));
+  currentStatus.injAngle = ((speeduinoResponse[89] << 8) | (speeduinoResponse[88]));
+  currentStatus.idleDuty = speeduinoResponse[90];
+  currentStatus.CLIdleTarget = speeduinoResponse[91];
+  currentStatus.mapDOT = speeduinoResponse[92];
+  currentStatus.vvt1Angle = speeduinoResponse[93];
+  currentStatus.vvt1TargetAngle = speeduinoResponse[94];
+  currentStatus.vvt1Duty = speeduinoResponse[95];
+  currentStatus.flexBoostCorrection = ((speeduinoResponse[97] << 8) | (speeduinoResponse[96]));
+  currentStatus.baroCorrection = speeduinoResponse[98];
+  currentStatus.ASEValue = speeduinoResponse[99];
+  currentStatus.vss = ((speeduinoResponse[101] << 8) | (speeduinoResponse[100]));
+  currentStatus.gear = speeduinoResponse[102];
+  currentStatus.fuelPressure = speeduinoResponse[103];
+  currentStatus.oilPressure = speeduinoResponse[104];
+  currentStatus.wmiPW = speeduinoResponse[105];
+  currentStatus.status4 = speeduinoResponse[106];
+  currentStatus.vvt2Angle = speeduinoResponse[107];
+  currentStatus.vvt2TargetAngle = speeduinoResponse[108];
+  currentStatus.vvt2Duty = speeduinoResponse[109];
+  currentStatus.outputsStatus = speeduinoResponse[110];
+  currentStatus.fuelTemp = speeduinoResponse[111];
+  currentStatus.fuelTempCorrection = speeduinoResponse[112];
+  currentStatus.VE1 = speeduinoResponse[113];
+  currentStatus.VE2 = speeduinoResponse[114];
+  currentStatus.advance1 = speeduinoResponse[115];
+  currentStatus.advance2 = speeduinoResponse[116];
+  currentStatus.nitrous_status = speeduinoResponse[117];
+  currentStatus.TS_SD_Status = speeduinoResponse[118];
+}
+
+void handleResponse()
+{
+  // Serial2.read(); // 'n' <-- DEC 110  << this must be uncommented if wanted to use the old method of reading serial.
+  Serial2.read();                   // 0x32 <-- DEC 50
+  uint8_t nLength = Serial2.read(); // Length of data to follow
+  for (int i = 0; i < nLength; i++)
+  {
+    speeduinoResponse[i] = Serial2.read();
+  }
+  processResponse();
+
+  // reset everything for the next frame
+  requestData();
+  oldtime = millis();
+  serialState = NOTHING_RECEIVED;
+  requiresRender = true;
+  // Serial1.println("Done handling response");
+  screenState = SCREEN_STATE_NORMAL;
+}
+
+void popSerialCommand()
+{
+  currentCommand = Serial2.read(); // 'n' <-- DEC 110
+  Serial.print("command=");
+  Serial.print(currentCommand);
+  switch (currentCommand)
+  {
+  case 'n': // Speeduino sends data in n-message
+    serialState = N_MESSAGE;
+    // Serial1.println("got n response");
+
+    break;
+  case 'R': // Speeduino requests data in n-message
+    serialState = R_MESSAGE;
+    // Serial1.println(currentCommand);
+    // Serial1.println("r msg");
+
+    break;
+  default:
+    // Serial1.println(currentCommand);
+    // Serial1.println("not n or r");
+    // Serial.print("Not an N or R message ");
+    // Serial.println(currentCommand);
+    if ((millis() - oldtime) > 500)
+    { // timeout
+      oldtime = millis();
+      requestData(); // restart data reading
+    }
+    break;
+  }
+}
+
+uint8_t reconnectionAttempts = 0;
+void reinitSerial() {
+  return;
+
+  
+  Serial2.end();
+  Serial2.setRx(PA3);
+  Serial2.setTx(PA2);
+  Serial2.begin(115200); // speeduino runs at 115200
+  reconnectionAttempts++;
+  delay(50);
+}
+
+
+bool readSerial()
+{
+  if (!Serial2.available())
+  {
+    reinitSerial();
+    serialState = NOTHING_RECEIVED;
+    return false;
+  }
+  reconnectionAttempts = 0;
+  switch (serialState)
+  {
+  case NOTHING_RECEIVED:
+    popSerialCommand();
+    break;
+  case N_MESSAGE:
+    // Serial1.println("Handling Response");
+    handleResponse();
+    break;
+  case R_MESSAGE:
+    // if (Serial2.available() >= 118) { HandleN(); }  // read and process the A-message from serial3, when it's fully received.
+    break;
+  }
+
+  return true;
+}
+
+
+
+void renderNoData()
+{
+  tft.fillScreen(ILI9341_BLACK);
+
+  tft.setTextSize(3);
+
+  tft.setCursor(0, 0);
+  tft.println("No data");
+
+  screenState = SCREEN_STATE_NO_DATA;
+}
+
+void renderNoSerial()
+{
+  tft.setTextSize(4);
+  tft.setCursor(0, 0);
+  tft.println("No");
+  tft.println("Connection");
+  tft.setTextSize(2);
+  tft.print("Reconnection Attempts ");
+  tft.print(reconnectionAttempts);
+  tft.println("   ");
+  tft.println(";_;");
+  // Serial1.println("No serial connection");
+  screenState = SCREEN_STATE_NO_DATA;
+}
+
+void render()
+{
+  tft.setTextSize(3);
+  tft.setCursor(0, 0);
+  tft.setTextColor(ILI9341_CYAN);
+
+  int fuel = readFuel();
+  renderGauge("FUEL    ", fuel, 0, 100, fuel < 10 ? errorColors : okColors);
+  renderGauge("RPM     ", currentStatus.RPM, 500, 7000, currentStatus.RPM > 5500 ? errorColors : okColors);
+  renderGauge("COOLANT ", currentStatus.coolant, 50, 250, currentStatus.coolant > 205 ? errorColors : okColors);
+  renderGauge("OIL     ", currentStatus.oilPressure, 0, 60, currentStatus.oilPressure < 10 ? errorColors : okColors);
+  // renderGauge("VOLTS", )a
+  // tft.setTextColor(ILI9341_WHITE, BACKGROUND_COLOR);
+  // float volts = currentStatus.battery10;
+  // tft.println(volts);
+  // showGauge((int)(volts * 100), 100, 150, BAR_COLOR);
+  // renderGauge("BAT", volts, 10, 15, volts < 13 ? errorColors : okColors);
+
+  int bottomPanelY = tft.getCursorY();
+  tft.drawLine(WIDTH / 2, bottomPanelY, WIDTH / 2, HEIGHT, ILI9341_WHITE);
+  tft.setTextSize(2);
+
+  writeSecondaries(bottomPanelY);
+  writeStatus(bottomPanelY);
+
+  requiresRender = false;
+}
+
+
+void setup()
+{
+  delay(500);
+  okColors.bar = ILI9341_CYAN;
+  okColors.background = BACKGROUND_COLOR;
+  okColors.text = ILI9341_WHITE;
+
+  tft.begin();
+  tft.setRotation(3);
+  requiresRender = false;
+  renderNoData();
+
+  // Serial1.begin(115200); // ftdi serial
+  // reinitSerial();
+
+  Serial2.setRx(PA3);
+  Serial2.setTx(PA2);
+  Serial2.begin(115200);
+  delay(250);
+  requestData();
+}
+
+void loop(void)
+{
+  bool hasConnection = readSerial();
+
+  if (screenState != lastScreenState)
+  {
+    tft.fillScreen(ILI9341_BLACK);
+  }
+
+  if (!hasConnection)
+  {
+    renderNoSerial();
+  }
+  else if (requiresRender)
+  {
+    render();
+  }
+
+  lastScreenState = screenState;
+  delay(5);
+}
