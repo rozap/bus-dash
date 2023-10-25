@@ -20,17 +20,22 @@
 #include <Arduino.h>
 #include <TFT_eSPI.h>
 #include <SPI.h>
-
-// CircularBuffer<double,WINDOW_SIZE> fuelWindow;
+#include <CircularBuffer.h>
 
 #define WIDTH 320
 #define HEIGHT 240
+
+#define FUEL_VIN 3.3
+#define RESISTANCE_PIN PB0
+#define FUEL_REF_OHM 47
+#define WINDOW_SIZE 16
+
 
 #define BAR_HEIGHT 8
 #define WUT ILI9341_CYAN
 
 // 16 bit TFT, 5 bits red, 6 green, 5 blue
-#define BACKGROUND_COLOR ((8 >> 3) << 11) | ((8 >> 2) << 5) | (8 >> 3)
+#define BACKGROUND_COLOR ILI9341_BLACK
 #define BAR_COLOR ILI9341_CYAN
 
 struct SpeeduinoStatus
@@ -129,6 +134,16 @@ SpeeduinoStatus currentStatus;
 
 TFT_eSPI tft = TFT_eSPI();
 
+double avg(CircularBuffer<double,WINDOW_SIZE> &cb) {
+  if (cb.size() == 0) return 0;
+  double total = 0;
+  for (int i = 0; i <= cb.size(); i++) {
+    total += cb[i];
+  }
+  return total / cb.size();
+}
+
+
 void showGauge(int value, int min, int max, int color)
 {
   int width = map(value, min, max, 0, tft.width());
@@ -136,47 +151,28 @@ void showGauge(int value, int min, int max, int color)
 
   // WIDTH / (max - min)
   tft.fillRect(
-      0, tft.getCursorY(),
-      width, BAR_HEIGHT,
-      color);
+    0, tft.getCursorY(),
+    width, BAR_HEIGHT,
+    color
+  );
   tft.println();
 }
 
 long i = 0;
+CircularBuffer<double,WINDOW_SIZE> fuelWindow;
 int readFuel()
 {
-  return sin(i * 0.005) * 100;
-  // return random(0, 100);
-}
+  double vout = (double)((analogRead(RESISTANCE_PIN) * FUEL_VIN) / 1024.0);
+  double ohms = FUEL_REF_OHM * (vout / (FUEL_VIN - vout));
+  fuelWindow.push(ohms);
+  double avgOhms = avg(fuelWindow);
 
-int readRPM()
-{
-  return random(2000, 6000);
-}
-
-float readBat()
-{
-  return random(12, 14);
-}
-
-float readCoolant()
-{
-  return random(180, 200);
-}
-
-float readAF()
-{
-  return random(13.0, 15.0);
-}
-
-float readTiming()
-{
-  return random(5, 15);
-}
-
-int readIAT()
-{
-  return random(50, 80);
+  double gallons = 29.0207 + (-7.0567 * log(avgOhms));
+  int pct = floor((gallons / 14) * 100);
+  if (pct < 0) {
+    pct = 0;
+  }
+  return pct;
 }
 
 void writeStatus(int bottomPanelY)
@@ -188,17 +184,28 @@ void writeStatus(int bottomPanelY)
 void writeSecondaries(int bottomPanelY)
 {
   tft.setTextColor(ILI9341_WHITE, BACKGROUND_COLOR);
+
+  char o2[8];
+  sprintf(o2, "%.1f", ((float)147) / 10.0);
   tft.print("A/F     ");
-  float af = readAF();
-  tft.println(af);
+  tft.print(o2);
+  tft.println("  ");
 
-  tft.setTextColor(ILI9341_WHITE, BACKGROUND_COLOR);
+  tft.print("OIL  ");
+  tft.print(currentStatus.oilPressure);
+  tft.println("  ");
+
   tft.print("TIMING  ");
-  tft.println(readTiming());
+  tft.print(currentStatus.advance);
+  tft.println("  ");
 
-  tft.setTextColor(ILI9341_WHITE, BACKGROUND_COLOR);
   tft.print("IAT     ");
-  tft.println(readIAT());
+  tft.print(currentStatus.IAT);
+  tft.println("  ");
+
+  tft.print("MET     ");
+  tft.println(currentStatus.secl);
+  tft.println("  ");
 }
 
 struct Colors
@@ -208,15 +215,15 @@ struct Colors
   int text;
 } okColors, errorColors;
 
-void renderGauge(const char *text, int value, int min, int max, Colors colors)
+void renderGauge(const char *label, int value, int min, int max, Colors colors)
 {
   tft.setTextSize(2);
   tft.setTextColor(ILI9341_WHITE, BACKGROUND_COLOR);
-  tft.print(text);
+  tft.print(label);
   tft.print(" ");
   tft.print(value);
   tft.println("            ");
-  showGauge(value, 0, 100, BAR_COLOR);
+  showGauge(value, min, max, BAR_COLOR);
 }
 
 #define NOTHING_RECEIVED 0
@@ -225,7 +232,7 @@ void renderGauge(const char *text, int value, int min, int max, Colors colors)
 static uint32_t oldtime = millis(); // for the timeout
 uint8_t serialState;
 uint8_t currentCommand;
-uint8_t speeduinoResponse[120];
+uint8_t speeduinoResponse[123];
 bool requiresRender = false;
 
 uint8_t screenState = 0;
@@ -236,6 +243,8 @@ uint8_t lastScreenState = 0;
 void requestData()
 {
   Serial2.write("n"); // Send n to request real time data
+  serialState = NOTHING_RECEIVED;
+
   // Serial1.println("wrote n");
 }
 
@@ -338,6 +347,10 @@ void processResponse()
   currentStatus.advance2 = speeduinoResponse[116];
   currentStatus.nitrous_status = speeduinoResponse[117];
   currentStatus.TS_SD_Status = speeduinoResponse[118];
+
+  Serial1.print("status=");
+  Serial1.print("oil=");
+  Serial1.println(currentStatus.oilPressure);
 }
 
 void handleResponse()
@@ -354,72 +367,57 @@ void handleResponse()
   // reset everything for the next frame
   requestData();
   oldtime = millis();
-  serialState = NOTHING_RECEIVED;
   requiresRender = true;
   // Serial1.println("Done handling response");
   screenState = SCREEN_STATE_NORMAL;
 }
 
-void popSerialCommand()
+bool popSerialCommand()
 {
   currentCommand = Serial2.read(); // 'n' <-- DEC 110
-  Serial.print("command=");
-  Serial.print(currentCommand);
+  // Serial.print("command=");
+  // Serial.print(currentCommand);
   switch (currentCommand)
   {
   case 'n': // Speeduino sends data in n-message
     serialState = N_MESSAGE;
     // Serial1.println("got n response");
 
-    break;
+    return true;
   case 'R': // Speeduino requests data in n-message
     serialState = R_MESSAGE;
     // Serial1.println(currentCommand);
     // Serial1.println("r msg");
 
-    break;
+    return true;
   default:
     // Serial1.println(currentCommand);
     // Serial1.println("not n or r");
     // Serial.print("Not an N or R message ");
     // Serial.println(currentCommand);
-    if ((millis() - oldtime) > 500)
-    { // timeout
-      oldtime = millis();
-      requestData(); // restart data reading
-    }
-    break;
-  }
-}
-
-uint8_t reconnectionAttempts = 0;
-void reinitSerial() {
-  return;
-
-  
-  Serial2.end();
-  Serial2.setRx(PA3);
-  Serial2.setTx(PA2);
-  Serial2.begin(115200); // speeduino runs at 115200
-  reconnectionAttempts++;
-  delay(50);
-}
-
-
-bool readSerial()
-{
-  if (!Serial2.available())
-  {
-    reinitSerial();
-    serialState = NOTHING_RECEIVED;
     return false;
   }
-  reconnectionAttempts = 0;
+}
+
+uint8_t timeouts = 0;
+bool readSerial()
+{
+  if ((millis() - oldtime) > 500)
+  { // timeout
+    oldtime = millis();
+    requestData(); // restart data reading
+    timeouts++;
+    return false;
+  }
+
+  if (!Serial2.available())
+  {
+    return false;
+  }
   switch (serialState)
   {
   case NOTHING_RECEIVED:
-    popSerialCommand();
-    break;
+    return popSerialCommand();
   case N_MESSAGE:
     // Serial1.println("Handling Response");
     handleResponse();
@@ -429,10 +427,10 @@ bool readSerial()
     break;
   }
 
+  timeouts = 0;
+
   return true;
 }
-
-
 
 void renderNoData()
 {
@@ -450,13 +448,15 @@ void renderNoSerial()
 {
   tft.setTextSize(4);
   tft.setCursor(0, 0);
-  tft.println("No");
-  tft.println("Connection");
+  tft.println("No Connection");
   tft.setTextSize(2);
-  tft.print("Reconnection Attempts ");
-  tft.print(reconnectionAttempts);
-  tft.println("   ");
-  tft.println(";_;");
+  tft.print("Timeouts ");
+  tft.print(timeouts);
+  tft.println("  ");
+
+  tft.print("Fuel ");
+  tft.print(readFuel());
+  tft.println("%   ");
   // Serial1.println("No serial connection");
   screenState = SCREEN_STATE_NO_DATA;
 }
@@ -472,7 +472,7 @@ void render()
   renderGauge("RPM     ", currentStatus.RPM, 500, 7000, currentStatus.RPM > 5500 ? errorColors : okColors);
   renderGauge("COOLANT ", currentStatus.coolant, 50, 250, currentStatus.coolant > 205 ? errorColors : okColors);
   renderGauge("OIL     ", currentStatus.oilPressure, 0, 60, currentStatus.oilPressure < 10 ? errorColors : okColors);
-  // renderGauge("VOLTS", )a
+  // renderGauge("VOLTS", )
   // tft.setTextColor(ILI9341_WHITE, BACKGROUND_COLOR);
   // float volts = currentStatus.battery10;
   // tft.println(volts);
@@ -483,12 +483,13 @@ void render()
   tft.drawLine(WIDTH / 2, bottomPanelY, WIDTH / 2, HEIGHT, ILI9341_WHITE);
   tft.setTextSize(2);
 
+  bottomPanelY = bottomPanelY + 1;
+  tft.setCursor(0, bottomPanelY);
   writeSecondaries(bottomPanelY);
   writeStatus(bottomPanelY);
 
   requiresRender = false;
 }
-
 
 void setup()
 {
@@ -502,12 +503,14 @@ void setup()
   requiresRender = false;
   renderNoData();
 
-  // Serial1.begin(115200); // ftdi serial
-  // reinitSerial();
+  while (!Serial1);
+  Serial1.begin(115200); // ftdi serial
+  delay(500);
 
   Serial2.setRx(PA3);
   Serial2.setTx(PA2);
-  Serial2.begin(115200);
+  Serial2.begin(115200); // speeduino runs at 115200
+
   delay(250);
   requestData();
 }
