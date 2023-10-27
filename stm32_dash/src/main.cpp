@@ -37,6 +37,8 @@
 // 16 bit TFT, 5 bits red, 6 green, 5 blue
 #define BACKGROUND_COLOR ILI9341_BLACK
 #define BAR_COLOR ILI9341_CYAN
+uint8_t timeouts = 0;
+
 
 struct SpeeduinoStatus
 {
@@ -129,6 +131,7 @@ struct SpeeduinoStatus
   uint8_t advance2;
   uint8_t nitrous_status;
   uint8_t TS_SD_Status;
+  uint8_t fanDuty;
 };
 SpeeduinoStatus currentStatus;
 
@@ -228,6 +231,7 @@ void renderGauge(const char *label, int value, int min, int max, Colors colors)
 
 #define NOTHING_RECEIVED 0
 #define R_MESSAGE 1
+#define NOTHING_REQUESTED 2
 #define N_MESSAGE 110
 static uint32_t oldtime = millis(); // for the timeout
 uint8_t serialState;
@@ -242,10 +246,10 @@ uint8_t lastScreenState = 0;
 
 void requestData()
 {
+
   Serial2.write("n"); // Send n to request real time data
   serialState = NOTHING_RECEIVED;
-
-  // Serial1.println("wrote n");
+  Serial1.println("wrote n");
 }
 
 void processResponse()
@@ -277,80 +281,83 @@ void processResponse()
   currentStatus.advance = speeduinoResponse[23];
   currentStatus.TPS = speeduinoResponse[24];
 
-  currentStatus.loopsPerSecond = ((speeduinoResponse[26] << 8) | (speeduinoResponse[25]));
-  currentStatus.freeRAM = ((speeduinoResponse[28] << 8) | (speeduinoResponse[27]));
+  // currentStatus.loopsPerSecond = ((speeduinoResponse[26] << 8) | (speeduinoResponse[25]));
+  // currentStatus.freeRAM = ((speeduinoResponse[28] << 8) | (speeduinoResponse[27]));
 
-  currentStatus.boostTarget = speeduinoResponse[29];
-  currentStatus.boostDuty = speeduinoResponse[30];
-  currentStatus.spark = speeduinoResponse[31];
+  // currentStatus.boostTarget = speeduinoResponse[29];
+  // currentStatus.boostDuty = speeduinoResponse[30];
+  // currentStatus.spark = speeduinoResponse[31];
 
-  currentStatus.rpmDOT = ((speeduinoResponse[33] << 8) | (speeduinoResponse[32]));
-  currentStatus.ethanolPct = speeduinoResponse[34];
+  // currentStatus.rpmDOT = ((speeduinoResponse[33] << 8) | (speeduinoResponse[32]));
+  // currentStatus.ethanolPct = speeduinoResponse[34];
 
-  currentStatus.flexCorrection = speeduinoResponse[35];
-  currentStatus.flexIgnCorrection = speeduinoResponse[36];
-  currentStatus.idleLoad = speeduinoResponse[37];
-  currentStatus.testOutputs = speeduinoResponse[38];
-  currentStatus.O2_2 = speeduinoResponse[39];
-  currentStatus.baro = speeduinoResponse[40];
-  currentStatus.CANin_1 = ((speeduinoResponse[42] << 8) | (speeduinoResponse[41]));
-  currentStatus.CANin_2 = ((speeduinoResponse[44] << 8) | (speeduinoResponse[43]));
-  currentStatus.CANin_3 = ((speeduinoResponse[46] << 8) | (speeduinoResponse[45]));
-  currentStatus.CANin_4 = ((speeduinoResponse[48] << 8) | (speeduinoResponse[47]));
-  currentStatus.CANin_5 = ((speeduinoResponse[50] << 8) | (speeduinoResponse[49]));
-  currentStatus.CANin_6 = ((speeduinoResponse[52] << 8) | (speeduinoResponse[51]));
-  currentStatus.CANin_7 = ((speeduinoResponse[54] << 8) | (speeduinoResponse[53]));
-  currentStatus.CANin_8 = ((speeduinoResponse[56] << 8) | (speeduinoResponse[55]));
-  currentStatus.CANin_9 = ((speeduinoResponse[58] << 8) | (speeduinoResponse[57]));
-  currentStatus.CANin_10 = ((speeduinoResponse[60] << 8) | (speeduinoResponse[59]));
-  currentStatus.CANin_11 = ((speeduinoResponse[62] << 8) | (speeduinoResponse[61]));
-  currentStatus.CANin_12 = ((speeduinoResponse[64] << 8) | (speeduinoResponse[63]));
-  currentStatus.CANin_13 = ((speeduinoResponse[66] << 8) | (speeduinoResponse[65]));
-  currentStatus.CANin_14 = ((speeduinoResponse[68] << 8) | (speeduinoResponse[67]));
-  currentStatus.CANin_15 = ((speeduinoResponse[70] << 8) | (speeduinoResponse[69]));
-  currentStatus.CANin_16 = ((speeduinoResponse[72] << 8) | (speeduinoResponse[71]));
-  currentStatus.tpsADC = speeduinoResponse[73];
-  currentStatus.getNextError = speeduinoResponse[74];
-  currentStatus.launchCorrection = speeduinoResponse[75];
-  currentStatus.PW2 = ((speeduinoResponse[77] << 8) | (speeduinoResponse[76]));
-  currentStatus.PW3 = ((speeduinoResponse[79] << 8) | (speeduinoResponse[78]));
-  currentStatus.PW4 = ((speeduinoResponse[81] << 8) | (speeduinoResponse[80]));
-  currentStatus.status3 = speeduinoResponse[82];
-  currentStatus.engineProtectStatus = speeduinoResponse[83];
-  currentStatus.fuelLoad = ((speeduinoResponse[85] << 8) | (speeduinoResponse[84]));
-  currentStatus.ignLoad = ((speeduinoResponse[87] << 8) | (speeduinoResponse[86]));
-  currentStatus.injAngle = ((speeduinoResponse[89] << 8) | (speeduinoResponse[88]));
-  currentStatus.idleDuty = speeduinoResponse[90];
-  currentStatus.CLIdleTarget = speeduinoResponse[91];
-  currentStatus.mapDOT = speeduinoResponse[92];
-  currentStatus.vvt1Angle = speeduinoResponse[93];
-  currentStatus.vvt1TargetAngle = speeduinoResponse[94];
-  currentStatus.vvt1Duty = speeduinoResponse[95];
-  currentStatus.flexBoostCorrection = ((speeduinoResponse[97] << 8) | (speeduinoResponse[96]));
-  currentStatus.baroCorrection = speeduinoResponse[98];
-  currentStatus.ASEValue = speeduinoResponse[99];
-  currentStatus.vss = ((speeduinoResponse[101] << 8) | (speeduinoResponse[100]));
-  currentStatus.gear = speeduinoResponse[102];
-  currentStatus.fuelPressure = speeduinoResponse[103];
-  currentStatus.oilPressure = speeduinoResponse[104];
-  currentStatus.wmiPW = speeduinoResponse[105];
-  currentStatus.status4 = speeduinoResponse[106];
-  currentStatus.vvt2Angle = speeduinoResponse[107];
-  currentStatus.vvt2TargetAngle = speeduinoResponse[108];
-  currentStatus.vvt2Duty = speeduinoResponse[109];
-  currentStatus.outputsStatus = speeduinoResponse[110];
-  currentStatus.fuelTemp = speeduinoResponse[111];
-  currentStatus.fuelTempCorrection = speeduinoResponse[112];
-  currentStatus.VE1 = speeduinoResponse[113];
-  currentStatus.VE2 = speeduinoResponse[114];
-  currentStatus.advance1 = speeduinoResponse[115];
-  currentStatus.advance2 = speeduinoResponse[116];
-  currentStatus.nitrous_status = speeduinoResponse[117];
-  currentStatus.TS_SD_Status = speeduinoResponse[118];
+  // currentStatus.flexCorrection = speeduinoResponse[35];
+  // currentStatus.flexIgnCorrection = speeduinoResponse[36];
+  // currentStatus.idleLoad = speeduinoResponse[37];
+  // currentStatus.testOutputs = speeduinoResponse[38];
+  // currentStatus.O2_2 = speeduinoResponse[39];
+  // currentStatus.baro = speeduinoResponse[40];
+  // currentStatus.CANin_1 = ((speeduinoResponse[42] << 8) | (speeduinoResponse[41]));
+  // currentStatus.CANin_2 = ((speeduinoResponse[44] << 8) | (speeduinoResponse[43]));
+  // currentStatus.CANin_3 = ((speeduinoResponse[46] << 8) | (speeduinoResponse[45]));
+  // currentStatus.CANin_4 = ((speeduinoResponse[48] << 8) | (speeduinoResponse[47]));
+  // currentStatus.CANin_5 = ((speeduinoResponse[50] << 8) | (speeduinoResponse[49]));
+  // currentStatus.CANin_6 = ((speeduinoResponse[52] << 8) | (speeduinoResponse[51]));
+  // currentStatus.CANin_7 = ((speeduinoResponse[54] << 8) | (speeduinoResponse[53]));
+  // currentStatus.CANin_8 = ((speeduinoResponse[56] << 8) | (speeduinoResponse[55]));
+  // currentStatus.CANin_9 = ((speeduinoResponse[58] << 8) | (speeduinoResponse[57]));
+  // currentStatus.CANin_10 = ((speeduinoResponse[60] << 8) | (speeduinoResponse[59]));
+  // currentStatus.CANin_11 = ((speeduinoResponse[62] << 8) | (speeduinoResponse[61]));
+  // currentStatus.CANin_12 = ((speeduinoResponse[64] << 8) | (speeduinoResponse[63]));
+  // currentStatus.CANin_13 = ((speeduinoResponse[66] << 8) | (speeduinoResponse[65]));
+  // currentStatus.CANin_14 = ((speeduinoResponse[68] << 8) | (speeduinoResponse[67]));
+  // currentStatus.CANin_15 = ((speeduinoResponse[70] << 8) | (speeduinoResponse[69]));
+  // currentStatus.CANin_16 = ((speeduinoResponse[72] << 8) | (speeduinoResponse[71]));
+  // currentStatus.tpsADC = speeduinoResponse[73];
+  // currentStatus.getNextError = speeduinoResponse[74];
+  // currentStatus.launchCorrection = speeduinoResponse[75];
+  // currentStatus.PW2 = ((speeduinoResponse[77] << 8) | (speeduinoResponse[76]));
+  // currentStatus.PW3 = ((speeduinoResponse[79] << 8) | (speeduinoResponse[78]));
+  // currentStatus.PW4 = ((speeduinoResponse[81] << 8) | (speeduinoResponse[80]));
+  // currentStatus.status3 = speeduinoResponse[82];
+  // currentStatus.engineProtectStatus = speeduinoResponse[83];
+  // currentStatus.fuelLoad = ((speeduinoResponse[85] << 8) | (speeduinoResponse[84]));
+  // currentStatus.ignLoad = ((speeduinoResponse[87] << 8) | (speeduinoResponse[86]));
+  // currentStatus.injAngle = ((speeduinoResponse[89] << 8) | (speeduinoResponse[88]));
+  // currentStatus.idleDuty = speeduinoResponse[90];
+  // currentStatus.CLIdleTarget = speeduinoResponse[91];
+  // currentStatus.mapDOT = speeduinoResponse[92];
+  // currentStatus.vvt1Angle = speeduinoResponse[93];
+  // currentStatus.vvt1TargetAngle = speeduinoResponse[94];
+  // currentStatus.vvt1Duty = speeduinoResponse[95];
+  // currentStatus.flexBoostCorrection = ((speeduinoResponse[97] << 8) | (speeduinoResponse[96]));
+  // currentStatus.baroCorrection = speeduinoResponse[98];
+  // currentStatus.ASEValue = speeduinoResponse[99];
+  // currentStatus.vss = ((speeduinoResponse[101] << 8) | (speeduinoResponse[100]));
+  // currentStatus.gear = speeduinoResponse[102];
+  // currentStatus.fuelPressure = speeduinoResponse[103];
+  currentStatus.oilPressure = speeduinoResponse[108];
+  currentStatus.fanDuty = speeduinoResponse[123];
+  // currentStatus.wmiPW = speeduinoResponse[105];
+  // currentStatus.status4 = speeduinoResponse[106];
+  // currentStatus.vvt2Angle = speeduinoResponse[107];
+  // currentStatus.vvt2TargetAngle = speeduinoResponse[108];
+  // currentStatus.vvt2Duty = speeduinoResponse[109];
+  // currentStatus.outputsStatus = speeduinoResponse[110];
+  // currentStatus.fuelTemp = speeduinoResponse[111];
+  // currentStatus.fuelTempCorrection = speeduinoResponse[112];
+  // currentStatus.VE1 = speeduinoResponse[113];
+  // currentStatus.VE2 = speeduinoResponse[114];
+  // currentStatus.advance1 = speeduinoResponse[115];
+  // currentStatus.advance2 = speeduinoResponse[116];
+  // currentStatus.nitrous_status = speeduinoResponse[117];
+  // currentStatus.TS_SD_Status = speeduinoResponse[118];
 
-  Serial1.print("status=");
-  Serial1.print("oil=");
+  Serial1.print("oil@108=");
   Serial1.println(currentStatus.oilPressure);
+  Serial1.print("o2=");
+  Serial1.println(currentStatus.O2);
+
 }
 
 void handleResponse()
@@ -358,15 +365,24 @@ void handleResponse()
   // Serial2.read(); // 'n' <-- DEC 110  << this must be uncommented if wanted to use the old method of reading serial.
   Serial2.read();                   // 0x32 <-- DEC 50
   uint8_t nLength = Serial2.read(); // Length of data to follow
-  for (int i = 0; i < nLength; i++)
-  {
-    speeduinoResponse[i] = Serial2.read();
-  }
-  processResponse();
+  Serial1.print("nLength=");
+  Serial1.println(nLength);
 
+  Serial2.setTimeout(500);
+  uint8_t nRead = Serial2.readBytes(speeduinoResponse, nLength);
+  Serial1.print("nRead=");
+  Serial1.println(nRead);
+
+
+  // oldtime = millis();
   // reset everything for the next frame
-  requestData();
-  oldtime = millis();
+  // requestData();
+  if (nRead < nLength) {
+    timeouts++;
+    requestData();
+  } else {
+    timeouts = 0;
+  }
   requiresRender = true;
   // Serial1.println("Done handling response");
   screenState = SCREEN_STATE_NORMAL;
@@ -399,16 +415,15 @@ bool popSerialCommand()
   }
 }
 
-uint8_t timeouts = 0;
 bool readSerial()
 {
-  if ((millis() - oldtime) > 500)
-  { // timeout
-    oldtime = millis();
-    requestData(); // restart data reading
-    timeouts++;
-    return false;
-  }
+  // if ((millis() - oldtime) > 500)
+  // { // timeout
+  //   oldtime = millis();
+  //   requestData(); // restart data reading
+  //   timeouts++;
+  //   return false;
+  // }
 
   if (!Serial2.available())
   {
@@ -416,6 +431,9 @@ bool readSerial()
   }
   switch (serialState)
   {
+  case NOTHING_REQUESTED:
+    requestData();
+    break;
   case NOTHING_RECEIVED:
     return popSerialCommand();
   case N_MESSAGE:
@@ -426,9 +444,6 @@ bool readSerial()
     // if (Serial2.available() >= 118) { HandleN(); }  // read and process the A-message from serial3, when it's fully received.
     break;
   }
-
-  timeouts = 0;
-
   return true;
 }
 
@@ -509,7 +524,7 @@ void setup()
 
   Serial2.setRx(PA3);
   Serial2.setTx(PA2);
-  Serial2.begin(115200); // speeduino runs at 115200
+  Serial2.begin(9600); // speeduino runs at 115200
 
   delay(250);
   requestData();
@@ -534,5 +549,4 @@ void loop(void)
   }
 
   lastScreenState = screenState;
-  delay(5);
 }
