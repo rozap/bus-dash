@@ -45,24 +45,35 @@
 uint8_t timeouts = 0;
 bool requestFrame = false;
 
+#define SERIAL_STATE_NOTHING 0
+#define SERIAL_STATE_REQUESTED_DATA 1
+uint8_t serialState = SERIAL_STATE_NOTHING;
 
+#define SCREEN_STATE_NO_DATA 1
+#define SCREEN_STATE_NO_CONNECTION 2
+#define SCREEN_STATE_NORMAL 0
+uint8_t screenState = SCREEN_STATE_NO_CONNECTION;
+uint8_t lastScreenState = SCREEN_STATE_NO_CONNECTION;
 
-void bumpTimeout() {
+void bumpTimeout()
+{
   timeouts++;
   requestFrame = true;
+  serialState = SERIAL_STATE_NOTHING; // send the n request again
+  screenState = SCREEN_STATE_NO_DATA;
 }
-void resetTimeout() {
+void resetTimeout()
+{
   timeouts = 0;
   requestFrame = true;
 }
-
 
 struct SpeeduinoStatus
 {
   uint8_t secl;
   uint8_t status1;
   uint8_t engine;
-  uint8_t dwell;
+  uint8_t syncLossCounter;
   uint16_t MAP;
   uint8_t IAT;
   uint8_t coolant;
@@ -200,21 +211,29 @@ int readFuel()
 void writeStatus(int bottomPanelY)
 {
   tft.setCursor(WIDTH / 2 + 8, bottomPanelY);
-  tft.print("ALL OK :)");
+
+  if (currentStatus.syncLossCounter > 0)
+  {
+    tft.print("SYNC LOSS: ");
+    tft.println(currentStatus.syncLossCounter);
+  }
+  else
+  {
+    tft.print("Fan: ");
+    tft.println(currentStatus.fanDuty);
+
+    tft.print("ALL OK :)");
+  }
 }
 
 void writeSecondaries(int bottomPanelY)
 {
   tft.setTextColor(ILI9341_WHITE, BACKGROUND_COLOR);
 
-  // char o2[8];
-  // sprintf(o2, "%.1f", ((float)147) / 10.0);
+  char o2[8];
+  dtostrf(((double)currentStatus.O2) / 10.0, 5, 1, o2);
   tft.print("A/F     ");
-  tft.print(currentStatus.O2);
-  tft.println("  ");
-
-  tft.print("OIL  ");
-  tft.print(currentStatus.oilPressure);
+  tft.print(o2);
   tft.println("  ");
 
   tft.print("TIMING  ");
@@ -226,7 +245,7 @@ void writeSecondaries(int bottomPanelY)
   tft.println("  ");
 
   tft.print("MET     ");
-  tft.println(currentStatus.secl);
+  tft.print(currentStatus.secl);
   tft.println("  ");
 }
 
@@ -254,27 +273,18 @@ void renderGauge(const char *label, int value, int min, int max, Colors colors)
 #define N_MESSAGE 110
 static uint32_t oldtime = millis(); // for the timeout
 
-#define SERIAL_STATE_NOTHING 0
-#define SERIAL_STATE_REQUESTED_DATA 1
-
-uint8_t serialState = SERIAL_STATE_NOTHING;
-
 uint8_t currentCommand;
 uint8_t speeduinoHeader[3];
-uint8_t speeduinoResponse[123];
-
-#define SCREEN_STATE_NO_DATA 1
-#define SCREEN_STATE_NO_CONNECTION 2
-#define SCREEN_STATE_NORMAL 0
-uint8_t screenState = SCREEN_STATE_NO_CONNECTION;
-uint8_t lastScreenState = SCREEN_STATE_NO_CONNECTION;
+#define RESPONSE_LEN 128
+uint8_t speeduinoResponse[RESPONSE_LEN];
 
 void processResponse()
 {
+  
   currentStatus.secl = speeduinoResponse[0];
   currentStatus.status1 = speeduinoResponse[1];
   currentStatus.engine = speeduinoResponse[2];
-  currentStatus.dwell = speeduinoResponse[3];
+  currentStatus.syncLossCounter = speeduinoResponse[3];
   currentStatus.MAP = ((speeduinoResponse[5] << 8) | (speeduinoResponse[4]));
   currentStatus.IAT = speeduinoResponse[6];
   currentStatus.coolant = speeduinoResponse[7] - 40;
@@ -373,6 +383,9 @@ void processResponse()
   // Serial1.println(currentStatus.oilPressure);
   // Serial1.print("o2=");
   // Serial1.println(currentStatus.O2);
+  for(uint8_t i; i < RESPONSE_LEN; i++) {
+    speeduinoResponse[i] = NULL;
+  }
 }
 
 void clearRx()
@@ -383,6 +396,23 @@ void clearRx()
   }
 }
 
+int popHeader()
+{
+  Serial2.setTimeout(500);
+  if (Serial2.find('n'))
+  {
+    Serial1.println("Found N");
+    
+    if (Serial2.find(0x32)) {
+      while(!Serial2.available());
+      Serial1.println("Return packetlen");
+      return Serial2.read();
+    }
+  }
+  return -1;
+}
+
+int unfucked = 0;
 void requestData()
 {
   if (serialState == SERIAL_STATE_NOTHING)
@@ -393,39 +423,41 @@ void requestData()
     Serial1.println("requested data");
   }
 
-  uint8_t headRead = Serial2.readBytes(speeduinoHeader, 3);
-  if (headRead == 3)
+  int nLength = popHeader();
+  if (nLength > 0)
   {
-    // header should look like ['n', 0x32, nLength]
-    if (speeduinoHeader[0] == 'n')
+    Serial1.print("nLength=");
+    Serial1.println(nLength);
+
+    
+    uint8_t nRead = Serial2.readBytes(speeduinoResponse, nLength);
+    Serial1.print("nRead=");
+    Serial1.println(nRead);
+
+    serialState = SERIAL_STATE_NOTHING;
+    if (nRead < nLength)
     {
-      uint8_t nLength = speeduinoHeader[2];
-      Serial1.print("nLength=");
-      Serial1.println(nLength);
-
-      uint8_t nRead = Serial2.readBytes(speeduinoResponse, nLength);
-      Serial1.print("nRead=");
-      Serial1.println(nRead);
-
-      serialState = SERIAL_STATE_NOTHING;
-      if (nRead < nLength)
-      {
-        screenState = SCREEN_STATE_NO_DATA;
-        bumpTimeout();
+      Serial1.println("nRead < nLength");
+      bumpTimeout();
+    }
+    else
+    {
+      screenState = SCREEN_STATE_NORMAL;
+      resetTimeout();
+      processResponse();
+      if (currentStatus.RPM > 5000) {
+        Serial1.print("Fuckup happened at ");
+        Serial1.println(unfucked);
+        Serial1.println("================ FUCKUP ===============");
+      } else {
+        unfucked++;
       }
-      else
-      {
-        screenState = SCREEN_STATE_NORMAL;
-        resetTimeout();
-        processResponse();
-        requestFrame = true;
-      }
+      requestFrame = true;
     }
   }
   else
   {
-    serialState = SERIAL_STATE_NOTHING; // send the n request again
-    screenState = SCREEN_STATE_NO_DATA;
+    Serial1.println("popHeader -1");
     bumpTimeout();
   }
 }
@@ -494,6 +526,10 @@ void setup()
   okColors.background = BACKGROUND_COLOR;
   okColors.text = ILI9341_WHITE;
 
+  errorColors.bar = ILI9341_RED;
+  errorColors.background = BACKGROUND_COLOR;
+  errorColors.text = ILI9341_ORANGE;
+
   tft.begin();
   tft.setRotation(3);
   requestFrame = false;
@@ -506,7 +542,7 @@ void setup()
 
   Serial2.setRx(PA3);
   Serial2.setTx(PA2);
-  Serial2.setTimeout(200);
+  Serial2.setTimeout(500);
   Serial2.begin(115200); // speeduino runs at 115200
 
   delay(250);
@@ -518,7 +554,8 @@ void loop(void)
 
   if (screenState != lastScreenState || requestFrame)
   {
-    if (screenState != lastScreenState) {
+    if (screenState != lastScreenState)
+    {
       tft.fillScreen(ILI9341_BLACK);
     }
 
@@ -539,4 +576,5 @@ void loop(void)
 
   lastScreenState = screenState;
   requestFrame = false;
+  delay(250);
 }
