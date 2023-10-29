@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <msq xmlns="http://www.msefi.com/:msq">
-<bibliography author="TunerStudio MS Ultra 3.1.08 - EFI Analytics, Inc." tuneComment="&lt;html&gt;Restore Point: User Requested Save of Settings - &#10;" writeDate="Sat Oct 28 15:54:20 PDT 2023"/>
+<bibliography author="TunerStudio MS Lite! 3.1.08 - EFI Analytics, Inc." tuneComment="&lt;html&gt;Restore Point: User Requested Save of Settings - &#10;" writeDate="Sun Oct 29 10:55:08 PDT 2023"/>
 <versionInfo fileFormat="5.0" firmwareInfo="Speeduino+2023.11-dev" nPages="15" signature="speeduino 202311-dev"/>
 <page>
 <pcVariable name="tsCanId">"0"</pcVariable>
@@ -443,23 +443,6 @@
 <pcVariable digits="0" name="fuel2LoadMax">255.0</pcVariable>
 <pcVariable digits="0" name="ign2LoadMax">255.0</pcVariable>
 <pcVariable name="AUXin00Alias">Aux0</pcVariable>
-<pcVariable name="tsSpeedSource">"GPS Speed"</pcVariable>
-<pcVariable digits="0" name="tsPrimaryInjectorSize">0.0</pcVariable>
-<pcVariable name="tsInjSizeConstant">"cc/min"</pcVariable>
-<pcVariable name="tsLogPowerFields">"Log HP &amp; Tq"</pcVariable>
-<pcVariable name="tsLogPerfFields">"Off"</pcVariable>
-<pcVariable name="tsFuelConsumptionUnits">"US Gallons"</pcVariable>
-<pcVariable name="tsDistanceUnits">"Miles Per Hour"</pcVariable>
-<pcVariable digits="0" name="tsVehicleWeight">3450.0</pcVariable>
-<pcVariable name="tsWeightUnits">"lbs"</pcVariable>
-<pcVariable digits="2" name="tsVehicleDragCoef">0.34</pcVariable>
-<pcVariable digits="0" name="tsTirePressure" units="psi">32.0</pcVariable>
-<pcVariable digits="1" name="tsFrontalArea">19.3</pcVariable>
-<pcVariable name="tsFrontalUnits">"sqft"</pcVariable>
-<pcVariable digits="1" name="tsTireDiameter" units="in">25.5</pcVariable>
-<pcVariable digits="2" name="tsTransGearRatio" units=":1">1.0</pcVariable>
-<pcVariable digits="2" name="tsFinalDriveRatio" units=":1">3.7</pcVariable>
-<pcVariable digits="0" name="tsEtRollOut" units="in">0.0</pcVariable>
 </page>
 <page number="0" size="128">
 <constant digits="1" name="aseTaperTime" units="S">1.0</constant>
@@ -472,15 +455,15 @@
 <constant name="aeApplyMode">"PW Adder"</constant>
 <constant name="multiplyMAP">"Fixed"</constant>
 <constant cols="1" digits="0" name="wueRates" rows="10" units="%">
+         165.0 
          155.0 
          150.0 
+         145.0 
          140.0 
-         130.0 
+         135.0 
+         125.0 
          120.0 
-         110.0 
-         100.0 
-         100.0 
-         100.0 
+         115.0 
          100.0 
       </constant>
 <constant digits="0" name="crankingPct" units="%">20.0</constant>
@@ -798,8 +781,8 @@
          84.186 
          109.386 
          134.586 
-         143.586 
          150.786 
+         190.386 
       </constant>
 <constant digits="0" name="dwellLim" units="ms">8.0</constant>
 <constant cols="1" digits="0" name="dwellRates" rows="6" units="%">
@@ -1110,7 +1093,7 @@
 <constant cols="1" digits="0" name="iacOLPWMVal" rows="10" units="Duty %">
          50.0 
          50.0 
-         49.0 
+         46.0 
          41.0 
          40.0 
          39.0 

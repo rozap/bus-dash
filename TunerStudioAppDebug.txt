@@ -1,0 +1,204 @@
+Starting on vantastic
+TunerStudio 3.1.08 started on Sun Oct 29 10:32:26 PDT 2023
+JRE 1.8.0_382, Linux 6.2.0-35-generic, amd64
+java.library.path=/usr/java/packages/lib/amd64:/usr/lib/x86_64-linux-gnu/jni:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/lib/jni:/lib:/usr/lib
+TunerStudioMS.jar
+Look:Metal, ClassName:'javax.swing.plaf.metal.MetalLookAndFeel'
+Look:Nimbus, ClassName:'javax.swing.plaf.nimbus.NimbusLookAndFeel'
+Look:CDE/Motif, ClassName:'com.sun.java.swing.plaf.motif.MotifLookAndFeel'
+Look:GTK+, ClassName:'com.sun.java.swing.plaf.gtk.GTKLookAndFeel'
+Look:Night Shade, ClassName:'de.muntjak.tinylookandfeel.TinyLookAndFeel'
+Setting Look & Feel to:javax.swing.plaf.metal.MetalLookAndFeel
+ScrollBar.width
+10/29/23 10:32:27 AM :Debug: no update:defaultFont
+10/29/23 10:32:28 AM :Info: Initializing File Dialogs.
+10/29/23 10:32:29 AM :Info: Updating ai & t
+10/29/23 10:32:30 AM :Info: Loading Language Content.
+10/29/23 10:32:32 AM :Debug: Command Non-VolatileBytes for F resolved to: x46                                                                   F
+10/29/23 10:32:32 AM :Debug: Command Non-VolatileBytes for I resolved to: x49                                                                   I
+10/29/23 10:32:32 AM :Debug: Command Non-VolatileBytes for f resolved to: x66                                                                   f
+10/29/23 10:32:32 AM :Info: Initializing Plugin Services.
+10/29/23 10:32:32 AM :Info: Loading Plugins.
+10/29/23 10:32:32 AM :Info: Initializing Help.
+10/29/23 10:32:32 AM :Info: Initializing Edition Features.
+10/29/23 10:32:32 AM :Info: Initializing App Events.
+10/29/23 10:32:32 AM :Debug: App Name:TunerStudio, appEdition:MS Ultra
+10/29/23 10:32:32 AM :Info: Initializing Log Viewer Components.
+10/29/23 10:32:32 AM :Info: Initializing User Interface
+10/29/23 10:32:33 AM :Warning: Unable to set Main cluster for title:
+10/29/23 10:32:34 AM :Info: Loading Font list.
+10/29/23 10:32:36 AM :Debug: Time to retreive font name list: 1054 ms.
+10/29/23 10:32:36 AM :Info: 
+10/29/23 10:32:36 AM :Info: Initializing UI Components.
+10/29/23 10:32:36 AM :Debug: EventTrigger playRacecarWOT Reset. expression: tps < 5
+10/29/23 10:32:36 AM :Debug: EventTrigger cltTempWarning Reset. expression: coolant < 200
+10/29/23 10:32:36 AM :Info: Ready
+MS Ultramain: No check, last update check=Sat Oct 28 20:36:31 PDT 2023
+MS Ultraad: No check, last update check=Sat Oct 28 20:36:37 PDT 2023
+10/29/23 10:32:43 AM :Info: Opening Project ...
+10/29/23 10:32:43 AM :Debug: Opening project: /home/chris/TunerStudioProjects/bus-dash/BusEJ20
+10/29/23 10:32:43 AM :Debug: EventTrigger playRacecarWOT Reset. expression: tps < 5
+10/29/23 10:32:43 AM :Debug: EventTrigger cltTempWarning Reset. expression: coolant < 200
+10/29/23 10:32:43 AM :Debug: EventTrigger Data log Reset. expression: 
+10/29/23 10:32:43 AM :Debug: EventTrigger playRacecarWOT Reset. expression: tps < 5
+10/29/23 10:32:43 AM :Debug: EventTrigger cltTempWarning Reset. expression: coolant < 200
+10/29/23 10:32:43 AM :Debug: EventTrigger Stop Data log Reset. expression: 
+10/29/23 10:32:43 AM :Debug: EventTrigger playRacecarWOT Reset. expression: tps < 5
+10/29/23 10:32:43 AM :Debug: EventTrigger cltTempWarning Reset. expression: coolant < 200
+10/29/23 10:32:43 AM :Debug: Reading translation file as plain text
+10/29/23 10:32:44 AM :Info: Supported iniSpecVersion=3.71
+10/29/23 10:32:44 AM :Debug: Filtered ConfigurationOptionGroup in 167ms.
+10/29/23 10:32:44 AM :Info: Supported iniSpecVersion=3.71
+10/29/23 10:32:44 AM :Info: Read file canPcVariables.ini: 3.21879ms
+10/29/23 10:32:44 AM :Info: Filtered ini: 0.544974ms
+10/29/23 10:32:44 AM :Info: No iniVersion defined
+10/29/23 10:32:44 AM :Info: Loading Trigger Wheels
+10/29/23 10:32:44 AM :Info: Loaded All known ini sections
+10/29/23 10:32:44 AM :Info: Parsed and validated ini "canPcVariables.ini" in : 117ms.
+10/29/23 10:32:44 AM :Info: Read file mainController.ini: 98.58067ms
+10/29/23 10:32:44 AM :Info: Filtered ini: 60.391556ms
+10/29/23 10:32:44 AM :Info: No iniVersion defined
+10/29/23 10:32:44 AM :Debug: ini signature: speeduino 202311-dev
+10/29/23 10:32:45 AM :Info: Loading Trigger Wheels
+10/29/23 10:32:45 AM :Info: Loading Depricated ini section [UserDefined], use [UiDialogs]
+10/29/23 10:32:46 AM :Info: Loaded All known ini sections
+10/29/23 10:32:46 AM :Info: Parsed and validated ini "mainController.ini" in : 1690ms.
+10/29/23 10:32:46 AM :Info: Supported iniSpecVersion=3.71
+10/29/23 10:32:46 AM :Info: Read file speeduinoSupplement.ecu: 102.28165ms
+10/29/23 10:32:46 AM :Info: Filtered ini: 0.654276ms
+10/29/23 10:32:46 AM :Info: No iniVersion defined
+10/29/23 10:32:46 AM :Info: Loading Trigger Wheels
+10/29/23 10:32:46 AM :Info: Loading Depricated ini section [UserDefined], use [UiDialogs]
+10/29/23 10:32:46 AM :Info: Validate Expressions disabled.
+10/29/23 10:32:46 AM :Info: Loaded All known ini sections
+10/29/23 10:32:46 AM :Info: Parsed ini "speeduinoSupplement.ecu" in : 141ms.
+10/29/23 10:32:46 AM :Info: Not Loading default Tools because they were already loaded from the project ini(s)
+10/29/23 10:32:46 AM :Info: Time to load primary config: 2434.1326ms. used cached config: false
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+10/29/23 10:32:46 AM :Debug: set baud to 115200
+10/29/23 10:32:46 AM :Debug: Adding Configuration: BusEJ20
+10/29/23 10:32:46 AM :Debug: controllerOnline = 0.0
+10/29/23 10:32:46 AM :Debug: Activating Event Trigger: TriggeredPage0 Refresh:  vssRefresh > 0 
+10/29/23 10:32:46 AM :Debug: Fill Constants: 103
+10/29/23 10:32:47 AM :Info: Tune opened, 3395 bytes updated. File:/home/chris/TunerStudioProjects/bus-dash/BusEJ20/CurrentTune.msq
+10/29/23 10:32:47 AM :Info: Tune opened, 3395 bytes updated. File:/home/chris/TunerStudioProjects/bus-dash/BusEJ20/CurrentTune.msq
+10/29/23 10:32:47 AM :Info: dirtyData.size(): 0
+10/29/23 10:32:47 AM :Info: dirtyData.size(): 0
+10/29/23 10:32:47 AM :Debug: Flush lasted: 78ms.
+10/29/23 10:32:47 AM :Info: dirtyData.size(): 0
+10/29/23 10:32:47 AM :Info: dirtyData.size(): 0
+10/29/23 10:32:47 AM :Debug: Flush lasted: 3ms.
+10/29/23 10:32:47 AM :Debug: Skip Burn, last write page: -2
+10/29/23 10:32:48 AM :Info: !!! Loaded config in 4561
+10/29/23 10:32:49 AM :Debug: EventTrigger playRacecarWOT Reset. expression: tps < 5
+10/29/23 10:32:49 AM :Debug: EventTrigger cltTempWarning Reset. expression: coolant < 200
+10/29/23 10:32:49 AM :Debug: Activating Event Trigger: playRacecarWOT
+10/29/23 10:32:49 AM :Debug: Activating Event Trigger: cltTempWarning
+10/29/23 10:32:49 AM :Debug: Deactivating Event Trigger: cltTempWarning
+10/29/23 10:32:49 AM :Debug: Activating Event Trigger: cltTempWarning
+10/29/23 10:32:49 AM :Info: EventTrigger: BusEJ20.cltTempWarning loaded and activated.
+10/29/23 10:32:49 AM :Debug: Deactivating Event Trigger: playRacecarWOT
+10/29/23 10:32:49 AM :Debug: Activating Event Trigger: playRacecarWOT
+10/29/23 10:32:49 AM :Info: EventTrigger: BusEJ20.playRacecarWOT loaded and activated.
+10/29/23 10:32:49 AM :Info: EventTrigger: BusEJ20.TriggeredPage0 Refresh:  vssRefresh > 0  not active.
+10/29/23 10:32:49 AM :Info: !!! Activated Project 5982
+10/29/23 10:32:49 AM :Info: Opening Gauge Cluster..
+10/29/23 10:32:50 AM :Info: Time to load uncached dash: 1229.4484ms, file: dashboard.dash
+10/29/23 10:32:52 AM :Debug: High Speed Paint: true
+10/29/23 10:32:52 AM :Info: 
+10/29/23 10:32:52 AM :Info: Com Thread created: COMM Thread36129.85540080108
+10/29/23 10:32:52 AM :Info: endModalBlock called, but Root Pane is not a ProgressPane.
+10/29/23 10:32:52 AM :Info: Comm Manager for BusEJ20 Started, thread ID: COMM Thread36129.85540080108
+10/29/23 10:32:52 AM :Debug: Port not valid: Unable to open port: /dev/ttyACM0
+Please check your Communications Settings. 
+10/29/23 10:32:53 AM :Info: Time to load uncached dash: 691.9477ms, file: Acceleration_Performance.dash
+10/29/23 10:32:53 AM :Debug: High Speed Paint: false
+10/29/23 10:32:53 AM :Debug: !!! Opened Dash 10130
+10/29/23 10:32:53 AM :Info: BusEJ20 Ready
+10/29/23 10:32:53 AM :Debug: Tuning View Files loaded in 1.087643ms.
+10/29/23 10:32:58 AM :Debug: goOffline Starting, Time:0
+10/29/23 10:32:58 AM :Info: Deactivated Turbo Baud, goOffline
+10/29/23 10:32:58 AM :Debug: goOffline about to stopProcessing, Time:6
+10/29/23 10:32:58 AM :Debug: goOffline closed port, Time:8
+10/29/23 10:32:58 AM :Debug: goOffline Starting, Time:0
+10/29/23 10:32:58 AM :Info: Deactivated Turbo Baud, goOffline
+10/29/23 10:32:58 AM :Debug: goOffline about to stopProcessing, Time:15
+10/29/23 10:32:58 AM :Debug: goOffline closed port, Time:17
+10/29/23 10:32:58 AM :Info: BusEJ20 ComThread stopped COMM Thread36129.85540080108
+10/29/23 10:32:58 AM :Debug: goOffline comm thread stopped, Time:168
+10/29/23 10:32:58 AM :Debug: No Remaining Queue Write instructions
+10/29/23 10:32:59 AM :Debug: goOffline comm thread stopped, Time:812
+10/29/23 10:32:59 AM :Debug: No Remaining Queue Write instructions
+10/29/23 10:32:59 AM :Debug: set baud to 115200
+10/29/23 10:32:59 AM :Debug: set baud to 115200
+10/29/23 10:33:02 AM :Debug: set baud to 115200
+10/29/23 10:33:02 AM :Debug: Received Instruction: Test Connection, Page: 0
+Oct 29, 2023 10:33:02 AM y.t a
+SEVERE: null
+F.l: Unable to open port: /dev/ttyACM0
+Please check your Communications Settings. 
+	at aw.a.f(Unknown Source)
+	at y.t.a(Unknown Source)
+	at F.J.q(Unknown Source)
+	at F.J.c(Unknown Source)
+	at F.J.b(Unknown Source)
+	at aJ.aa.o(Unknown Source)
+	at aJ.aa.b(Unknown Source)
+	at aJ.am.run(Unknown Source)
+
+10/29/23 10:33:28 AM :Debug: ############################################# Save Project Backup ##########################################
+10/29/23 10:33:28 AM :Debug: TuneLog Editor set text
+10/29/23 10:33:28 AM :Debug: Fill Constants: 62
+10/29/23 10:33:28 AM :Info: Skip Restore Point for 'BusEJ20' because nothing changed since: BusEJ20_2023-10-28_15.54.20.msq
+10/29/23 10:33:29 AM :Info: Time to save msq: 646.4865
+10/29/23 10:33:29 AM :Debug: goOffline Starting, Time:0
+10/29/23 10:33:29 AM :Info: Deactivated Turbo Baud, goOffline
+10/29/23 10:33:29 AM :Debug: goOffline about to stopProcessing, Time:2
+10/29/23 10:33:29 AM :Debug: goOffline closed port, Time:3
+10/29/23 10:33:30 AM :Debug: goOffline comm thread stopped, Time:504
+10/29/23 10:33:30 AM :Debug: No Remaining Queue Write instructions
+10/29/23 10:33:30 AM :Debug: removing Configuration: BusEJ20
+Exception in thread "AWT-EventQueue-1" java.lang.NullPointerException
+	at com.efiAnalytics.apps.ts.dashboard.x.aB(Unknown Source)
+	at com.efiAnalytics.apps.ts.dashboard.x.paint(Unknown Source)
+	at javax.swing.JComponent.paintChildren(JComponent.java:889)
+	at javax.swing.JComponent.paint(JComponent.java:1065)
+	at javax.swing.JComponent.paintChildren(JComponent.java:889)
+	at javax.swing.JComponent.paint(JComponent.java:1065)
+	at javax.swing.JComponent.paintChildren(JComponent.java:889)
+	at javax.swing.JComponent.paint(JComponent.java:1065)
+	at javax.swing.JComponent.paintToOffscreen(JComponent.java:5210)
+	at javax.swing.RepaintManager$PaintManager.paintDoubleBuffered(RepaintManager.java:1579)
+	at javax.swing.RepaintManager$PaintManager.paint(RepaintManager.java:1502)
+	at javax.swing.BufferStrategyPaintManager.paint(BufferStrategyPaintManager.java:306)
+	at javax.swing.RepaintManager.paint(RepaintManager.java:1272)
+	at javax.swing.JComponent._paintImmediately(JComponent.java:5158)
+	at javax.swing.JComponent.paintImmediately(JComponent.java:4969)
+	at javax.swing.RepaintManager$4.run(RepaintManager.java:831)
+	at javax.swing.RepaintManager$4.run(RepaintManager.java:814)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:74)
+	at javax.swing.RepaintManager.paintDirtyRegions(RepaintManager.java:814)
+	at javax.swing.RepaintManager.paintDirtyRegions(RepaintManager.java:789)
+	at javax.swing.RepaintManager.prePaintDirtyRegions(RepaintManager.java:738)
+	at javax.swing.RepaintManager.access$1200(RepaintManager.java:64)
+	at javax.swing.RepaintManager$ProcessingRunnable.run(RepaintManager.java:1732)
+	at java.awt.event.InvocationEvent.dispatch(InvocationEvent.java:311)
+	at java.awt.EventQueue.dispatchEventImpl(EventQueue.java:758)
+	at java.awt.EventQueue.access$500(EventQueue.java:97)
+	at java.awt.EventQueue$3.run(EventQueue.java:709)
+	at java.awt.EventQueue$3.run(EventQueue.java:703)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:74)
+	at java.awt.EventQueue.dispatchEvent(EventQueue.java:728)
+	at org.GNOME.Accessibility.AtkWrapper$6.dispatchEvent(AtkWrapper.java:717)
+	at java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:205)
+	at java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:116)
+	at java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:105)
+	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
+	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:93)
+	at java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
+10/29/23 10:33:30 AM :Debug: ############################################# Save Project Backup ##########################################
+Saved user properties successfully

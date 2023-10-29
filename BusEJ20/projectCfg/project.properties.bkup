@@ -1,7 +1,7 @@
 #Project Attributes.
 #TunerStudio by EFI Analytics, Inc
-#Last Saved on: Sat Oct 28 11:25:21 PDT 2023
-#Sat Oct 28 11:25:21 PDT 2023
+#Last Saved on: Sun Oct 29 10:55:08 PDT 2023
+#Sun Oct 29 10:55:08 PDT 2023
 prgm_out_configProgrammable\ outputs_width=497
 injCharsInjector\ Characteristics_width=407
 prgm_out_configProgrammable\ outputs_Y=328
@@ -16,8 +16,8 @@ fuelpumpFuel\ pump_width=350
 CommSettingMSCommDriver.RS232\ Serial\ InterfaceBluetooth\ Port=false
 veGenerator_txtPkHpMap=100
 sparkSettingsSpark\ Settings_height=455
-warmupWarmup\ Enrichment\ (WUE)\ -\ Percent\ Multiplier_Y=294
-warmupWarmup\ Enrichment\ (WUE)\ -\ Percent\ Multiplier_X=811
+warmupWarmup\ Enrichment\ (WUE)\ -\ Percent\ Multiplier_Y=30
+warmupWarmup\ Enrichment\ (WUE)\ -\ Percent\ Multiplier_X=61
 veTableDialogVE\ Table_width=565
 injector_timing_curve_Set\ X\ Axis\ Minimum=0.0
 iacPwmCrank_curve_Set\ X\ Axis\ Minimum=-40.0
@@ -48,9 +48,9 @@ fanSettingsFan\ Settings_height=362
 inj_trimadInjector\ Cyl\ 1-4\ Trims_height=547
 inj_trimadInjector\ Cyl\ 1-4\ Trims_Y=282
 inj_trimadInjector\ Cyl\ 1-4\ Trims_X=703
-iacPwm_curveIAC\ PWM\ Duty_Y=317
+iacPwm_curveIAC\ PWM\ Duty_Y=214
 CommSettingBaud\ Rate=115200
-iacPwm_curveIAC\ PWM\ Duty_X=933
+iacPwm_curveIAC\ PWM\ Duty_X=472
 primePWPriming\ Pulsewidth_height=440
 warmup_afr_curve_Set\ X\ Axis\ Minimum=-40.0
 lambdaTable1TblLambda\ Table_Y=338
@@ -158,7 +158,7 @@ ecuSettings=AFR|CAN_COMMANDS_OFF|FAHRENHEIT|enablehardware_test|resetcontrol_sta
 veGenerator_txtDisplacementCid=122
 engineProtectionHard\ Limit\ Configuration_X=757
 refTable_001_chkCelsius=true
-warmupWarmup\ Enrichment\ (WUE)\ -\ Percent\ Multiplier_height=748
+warmupWarmup\ Enrichment\ (WUE)\ -\ Percent\ Multiplier_height=570
 cranking_enrich_curve_Set\ X\ Axis\ Minimum=-40.0
 userDash0.DashName=Acceleration Performance
 sparkTblIgnition\ Advance\ Table_Y=338
@@ -167,6 +167,7 @@ useCommonTuneViewDir=false
 projectDescription=
 airdensity_curveIAT\ density\ correction_height=372
 dwell_mapDwell\ map_Y=255
+firmwareDescription=Speeduino 2023.11-dev
 dwell_mapDwell\ map_X=1237
 oilPressureProtectionOil\ Pressure_height=402
 pressureSensorsPressure\ Transducers_Y=313
@@ -208,12 +209,13 @@ ASEAfterstart\ Enrichment(ASE)_Y=148
 ASEAfterstart\ Enrichment(ASE)_X=1010
 baudRate=115200
 veGenerator_txtMaxRpm=7000
-warmupWarmup\ Enrichment\ (WUE)\ -\ Percent\ Multiplier_width=722
+warmupWarmup\ Enrichment\ (WUE)\ -\ Percent\ Multiplier_width=429
 protocolEnvelope=
 afrTable1TblAFR\ Table_Y=338
 refTable_000_chkFahrenheit=true
 afrTable1TblAFR\ Table_X=684
 projectName=BusEJ20
+warmup_curve_showText=true
 serial3IOSecondary\ Serial\ IO\ interface_width=952
 oilPressureProtectionOil\ Pressure_Y=354
 oilPressureProtectionOil\ Pressure_X=748
