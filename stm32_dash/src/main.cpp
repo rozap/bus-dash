@@ -45,21 +45,28 @@
 uint8_t timeouts = 0;
 bool requestFrame = false;
 
-#define SERIAL_STATE_NOTHING 0
-#define SERIAL_STATE_REQUESTED_DATA 1
-uint8_t serialState = SERIAL_STATE_NOTHING;
-
 #define SCREEN_STATE_NO_DATA 1
 #define SCREEN_STATE_NO_CONNECTION 2
 #define SCREEN_STATE_NORMAL 0
 uint8_t screenState = SCREEN_STATE_NO_CONNECTION;
 uint8_t lastScreenState = SCREEN_STATE_NO_CONNECTION;
 
+#define LIMIT_COOLANT_UPPER 215
+#define LIMIT_OIL_LOWER 10
+#define LIMIT_FUEL_LOWER 10
+#define LIMIT_RPM_UPPER 5500
+
+struct Colors
+{
+  int bar;
+  int background;
+  int text;
+} okColors, errorColors;
+
 void bumpTimeout()
 {
   timeouts++;
   requestFrame = true;
-  serialState = SERIAL_STATE_NOTHING; // send the n request again
   screenState = SCREEN_STATE_NO_DATA;
 }
 void resetTimeout()
@@ -68,11 +75,37 @@ void resetTimeout()
   requestFrame = true;
 }
 
+bool isNthBitSet(unsigned char c, int n)
+{
+  // static unsigned char mask[] = {128, 64, 32, 16, 8, 4, 2, 1};
+  static unsigned char mask[] = {1, 2, 4, 8, 16, 32, 64, 128};
+
+  return ((c & mask[n]) != 0);
+}
+// Define bit positions within engine variable
+#define BIT_ENGINE_RUN 0    // Engine running
+#define BIT_ENGINE_CRANK 1  // Engine cranking
+#define BIT_ENGINE_ASE 2    // after start enrichment (ASE)
+#define BIT_ENGINE_WARMUP 3 // Engine in warmup
+#define BIT_ENGINE_ACC 4    // in acceleration mode (TPS accel)
+#define BIT_ENGINE_DCC 5    // in deceleration mode
+#define BIT_ENGINE_MAPACC 6 // MAP acceleration mode
+#define BIT_ENGINE_MAPDCC 7 // MAP deceleration mode
+
+#define BIT_STATUS4_WMI_EMPTY 0  // Indicates whether the WMI tank is empty
+#define BIT_STATUS4_VVT1_ERROR 1 // VVT1 cam angle within limits or not
+#define BIT_STATUS4_VVT2_ERROR 2 // VVT2 cam angle within limits or not
+#define BIT_STATUS4_FAN 3        // Fan Status
+#define BIT_STATUS4_BURNPENDING 4
+#define BIT_STATUS4_STAGING_ACTIVE 5
+#define BIT_STATUS4_COMMS_COMPAT 6
+#define BIT_STATUS4_ALLOW_LEGACY_COMMS 7
+
 struct SpeeduinoStatus
 {
   uint8_t secl;
   uint8_t status1;
-  uint8_t engine;
+  byte engine;
   uint8_t syncLossCounter;
   uint16_t MAP;
   uint8_t IAT;
@@ -177,9 +210,14 @@ double avg(CircularBuffer<double, WINDOW_SIZE> &cb)
   return total / cb.size();
 }
 
+void clearLine() {
+  tft.fillRect(tft.getCursorX(), tft.getCursorY(), tft.width(), tft.getCursorY() + tft.textsize, BACKGROUND_COLOR);
+}
+
 void showGauge(int value, int min, int max, int color)
 {
   int width = map(value, min, max, 0, tft.width());
+
   tft.fillRect(0, tft.getCursorY(), tft.width(), BAR_HEIGHT, BACKGROUND_COLOR);
 
   // WIDTH / (max - min)
@@ -208,21 +246,95 @@ int readFuel()
   return pct;
 }
 
+void moveToHalfWidth()
+{
+  tft.setCursor(WIDTH / 2 + 8, tft.getCursorY());
+  clearLine();
+}
+
 void writeStatus(int bottomPanelY)
 {
   tft.setCursor(WIDTH / 2 + 8, bottomPanelY);
+  // tft.fillRect(WIDTH / 2 + 1, bottomPanelY - 4, WIDTH, HEIGHT, BACKGROUND_COLOR);
 
-  if (currentStatus.syncLossCounter > 0)
+  moveToHalfWidth();
+  if (isNthBitSet(currentStatus.status4, BIT_STATUS4_FAN))
   {
-    tft.print("SYNC LOSS: ");
-    tft.println(currentStatus.syncLossCounter);
+    tft.println("Fan On");
   }
   else
   {
-    tft.print("Fan: ");
-    tft.println(currentStatus.fanDuty);
+    tft.println("Fan Off");
+  }
+  moveToHalfWidth();
 
-    tft.print("ALL OK :)");
+  bool hasError = false;
+
+  if (currentStatus.coolant > LIMIT_COOLANT_UPPER)
+  {
+    tft.setTextColor(errorColors.text);
+    tft.println("Eng Hot!");
+    moveToHalfWidth();
+    hasError = true;
+  }
+  if (readFuel() < LIMIT_FUEL_LOWER)
+  {
+    tft.setTextColor(errorColors.text);
+    tft.println("Low Gas!");
+    moveToHalfWidth();
+    hasError = true;
+  }
+  if (currentStatus.oilPressure < LIMIT_OIL_LOWER)
+  {
+    tft.setTextColor(errorColors.text);
+    tft.println("Low Oil Prs!");
+    moveToHalfWidth();
+    hasError = true;
+  }
+  if (currentStatus.RPM > LIMIT_RPM_UPPER)
+  {
+    tft.setTextColor(errorColors.text);
+    tft.println("Over rev!");
+    moveToHalfWidth();
+    hasError = true;
+  }
+
+  if (!hasError)
+  {
+    tft.setTextColor(okColors.text);
+    tft.println("All OK");
+  }
+
+  tft.setTextColor(okColors.text);
+  bool isRunning = isNthBitSet(currentStatus.engine, BIT_ENGINE_RUN);
+  bool isCranking = isNthBitSet(currentStatus.engine, BIT_ENGINE_CRANK);
+  if (!isRunning && !isCranking)
+  {
+    moveToHalfWidth();
+    tft.setTextColor(errorColors.text);
+    tft.println("Eng Off");
+    tft.setTextColor(okColors.text);
+  }
+
+  if (isRunning)
+  {
+    moveToHalfWidth();
+    tft.println("Running");
+  }
+  if (isCranking)
+  {
+    moveToHalfWidth();
+    tft.println("Cranking");
+  }
+  if (isNthBitSet(currentStatus.engine, BIT_ENGINE_WARMUP))
+  {
+    moveToHalfWidth();
+    tft.println("Warmup");
+  }
+  if (isNthBitSet(currentStatus.engine, BIT_ENGINE_ASE))
+  {
+    moveToHalfWidth();
+    tft.println("ASE");
   }
 }
 
@@ -232,9 +344,9 @@ void writeSecondaries(int bottomPanelY)
 
   char o2[8];
   dtostrf(((double)currentStatus.O2) / 10.0, 5, 1, o2);
-  tft.print("A/F     ");
+  tft.print("A/F    ");
   tft.print(o2);
-  tft.println("  ");
+  tft.println(" ");
 
   tft.print("TIMING  ");
   tft.print(currentStatus.advance);
@@ -244,43 +356,36 @@ void writeSecondaries(int bottomPanelY)
   tft.print(currentStatus.IAT);
   tft.println("  ");
 
+  tft.print("VOLTS  ");
+  char volts[8];
+  dtostrf(((double)currentStatus.battery10) / 10.0, 5, 1, volts);
+  tft.print(volts);
+  tft.println(" ");
+
   tft.print("MET     ");
   tft.print(currentStatus.secl);
   tft.println("  ");
 }
 
-struct Colors
-{
-  int bar;
-  int background;
-  int text;
-} okColors, errorColors;
-
 void renderGauge(const char *label, int value, int min, int max, Colors colors)
 {
   tft.setTextSize(2);
-  tft.setTextColor(ILI9341_WHITE, BACKGROUND_COLOR);
+  tft.setTextColor(colors.text, colors.background);
   tft.print(label);
   tft.print(" ");
   tft.print(value);
   tft.println("            ");
-  showGauge(value, min, max, BAR_COLOR);
+  showGauge(value, min, max, colors.bar);
 }
 
-#define NOTHING_RECEIVED 0
-#define R_MESSAGE 1
-#define NOTHING_REQUESTED 2
-#define N_MESSAGE 110
 static uint32_t oldtime = millis(); // for the timeout
 
-uint8_t currentCommand;
-uint8_t speeduinoHeader[3];
 #define RESPONSE_LEN 128
 uint8_t speeduinoResponse[RESPONSE_LEN];
 
 void processResponse()
 {
-  
+
   currentStatus.secl = speeduinoResponse[0];
   currentStatus.status1 = speeduinoResponse[1];
   currentStatus.engine = speeduinoResponse[2];
@@ -322,50 +427,50 @@ void processResponse()
   currentStatus.flexIgnCorrection = speeduinoResponse[36];
   currentStatus.idleLoad = speeduinoResponse[37];
   currentStatus.testOutputs = speeduinoResponse[38];
-  // currentStatus.O2_2 = speeduinoResponse[39];
-  // currentStatus.baro = speeduinoResponse[40];
-  // currentStatus.CANin_1 = ((speeduinoResponse[42] << 8) | (speeduinoResponse[41]));
-  // currentStatus.CANin_2 = ((speeduinoResponse[44] << 8) | (speeduinoResponse[43]));
-  // currentStatus.CANin_3 = ((speeduinoResponse[46] << 8) | (speeduinoResponse[45]));
-  // currentStatus.CANin_4 = ((speeduinoResponse[48] << 8) | (speeduinoResponse[47]));
-  // currentStatus.CANin_5 = ((speeduinoResponse[50] << 8) | (speeduinoResponse[49]));
-  // currentStatus.CANin_6 = ((speeduinoResponse[52] << 8) | (speeduinoResponse[51]));
-  // currentStatus.CANin_7 = ((speeduinoResponse[54] << 8) | (speeduinoResponse[53]));
-  // currentStatus.CANin_8 = ((speeduinoResponse[56] << 8) | (speeduinoResponse[55]));
-  // currentStatus.CANin_9 = ((speeduinoResponse[58] << 8) | (speeduinoResponse[57]));
-  // currentStatus.CANin_10 = ((speeduinoResponse[60] << 8) | (speeduinoResponse[59]));
-  // currentStatus.CANin_11 = ((speeduinoResponse[62] << 8) | (speeduinoResponse[61]));
-  // currentStatus.CANin_12 = ((speeduinoResponse[64] << 8) | (speeduinoResponse[63]));
-  // currentStatus.CANin_13 = ((speeduinoResponse[66] << 8) | (speeduinoResponse[65]));
-  // currentStatus.CANin_14 = ((speeduinoResponse[68] << 8) | (speeduinoResponse[67]));
-  // currentStatus.CANin_15 = ((speeduinoResponse[70] << 8) | (speeduinoResponse[69]));
-  // currentStatus.CANin_16 = ((speeduinoResponse[72] << 8) | (speeduinoResponse[71]));
-  // currentStatus.tpsADC = speeduinoResponse[73];
-  // currentStatus.getNextError = speeduinoResponse[74];
-  // currentStatus.launchCorrection = speeduinoResponse[75];
-  // currentStatus.PW2 = ((speeduinoResponse[77] << 8) | (speeduinoResponse[76]));
-  // currentStatus.PW3 = ((speeduinoResponse[79] << 8) | (speeduinoResponse[78]));
-  // currentStatus.PW4 = ((speeduinoResponse[81] << 8) | (speeduinoResponse[80]));
-  // currentStatus.status3 = speeduinoResponse[82];
-  // currentStatus.engineProtectStatus = speeduinoResponse[83];
-  // currentStatus.fuelLoad = ((speeduinoResponse[85] << 8) | (speeduinoResponse[84]));
-  // currentStatus.ignLoad = ((speeduinoResponse[87] << 8) | (speeduinoResponse[86]));
-  // currentStatus.injAngle = ((speeduinoResponse[89] << 8) | (speeduinoResponse[88]));
-  // currentStatus.idleDuty = speeduinoResponse[90];
-  // currentStatus.CLIdleTarget = speeduinoResponse[91];
-  // currentStatus.mapDOT = speeduinoResponse[92];
-  // currentStatus.vvt1Angle = speeduinoResponse[93];
-  // currentStatus.vvt1TargetAngle = speeduinoResponse[94];
-  // currentStatus.vvt1Duty = speeduinoResponse[95];
-  // currentStatus.flexBoostCorrection = ((speeduinoResponse[97] << 8) | (speeduinoResponse[96]));
-  // currentStatus.baroCorrection = speeduinoResponse[98];
-  // currentStatus.ASEValue = speeduinoResponse[99];
-  // currentStatus.vss = ((speeduinoResponse[101] << 8) | (speeduinoResponse[100]));
-  // currentStatus.gear = speeduinoResponse[102];
-  // currentStatus.fuelPressure = speeduinoResponse[103];
-  currentStatus.oilPressure = speeduinoResponse[108];
-  // currentStatus.wmiPW = speeduinoResponse[105];
-  // currentStatus.status4 = speeduinoResponse[106];
+  currentStatus.O2_2 = speeduinoResponse[39];
+  currentStatus.baro = speeduinoResponse[40];
+  currentStatus.CANin_1 = ((speeduinoResponse[42] << 8) | (speeduinoResponse[41]));
+  currentStatus.CANin_2 = ((speeduinoResponse[44] << 8) | (speeduinoResponse[43]));
+  currentStatus.CANin_3 = ((speeduinoResponse[46] << 8) | (speeduinoResponse[45]));
+  currentStatus.CANin_4 = ((speeduinoResponse[48] << 8) | (speeduinoResponse[47]));
+  currentStatus.CANin_5 = ((speeduinoResponse[50] << 8) | (speeduinoResponse[49]));
+  currentStatus.CANin_6 = ((speeduinoResponse[52] << 8) | (speeduinoResponse[51]));
+  currentStatus.CANin_7 = ((speeduinoResponse[54] << 8) | (speeduinoResponse[53]));
+  currentStatus.CANin_8 = ((speeduinoResponse[56] << 8) | (speeduinoResponse[55]));
+  currentStatus.CANin_9 = ((speeduinoResponse[58] << 8) | (speeduinoResponse[57]));
+  currentStatus.CANin_10 = ((speeduinoResponse[60] << 8) | (speeduinoResponse[59]));
+  currentStatus.CANin_11 = ((speeduinoResponse[62] << 8) | (speeduinoResponse[61]));
+  currentStatus.CANin_12 = ((speeduinoResponse[64] << 8) | (speeduinoResponse[63]));
+  currentStatus.CANin_13 = ((speeduinoResponse[66] << 8) | (speeduinoResponse[65]));
+  currentStatus.CANin_14 = ((speeduinoResponse[68] << 8) | (speeduinoResponse[67]));
+  currentStatus.CANin_15 = ((speeduinoResponse[70] << 8) | (speeduinoResponse[69]));
+  currentStatus.CANin_16 = ((speeduinoResponse[72] << 8) | (speeduinoResponse[71]));
+  currentStatus.tpsADC = speeduinoResponse[73];
+  currentStatus.getNextError = speeduinoResponse[74];
+  currentStatus.launchCorrection = speeduinoResponse[75];
+  currentStatus.PW2 = ((speeduinoResponse[77] << 8) | (speeduinoResponse[76]));
+  currentStatus.PW3 = ((speeduinoResponse[79] << 8) | (speeduinoResponse[78]));
+  currentStatus.PW4 = ((speeduinoResponse[81] << 8) | (speeduinoResponse[80]));
+  currentStatus.status3 = speeduinoResponse[82];
+  currentStatus.engineProtectStatus = speeduinoResponse[83];
+  currentStatus.fuelLoad = ((speeduinoResponse[85] << 8) | (speeduinoResponse[84]));
+  currentStatus.ignLoad = ((speeduinoResponse[87] << 8) | (speeduinoResponse[86]));
+  currentStatus.injAngle = ((speeduinoResponse[89] << 8) | (speeduinoResponse[88]));
+  currentStatus.idleDuty = speeduinoResponse[90];
+  currentStatus.CLIdleTarget = speeduinoResponse[91];
+  currentStatus.mapDOT = speeduinoResponse[92];
+  currentStatus.vvt1Angle = speeduinoResponse[93];
+  currentStatus.vvt1TargetAngle = speeduinoResponse[94];
+  currentStatus.vvt1Duty = speeduinoResponse[95];
+  currentStatus.flexBoostCorrection = ((speeduinoResponse[97] << 8) | (speeduinoResponse[96]));
+  currentStatus.baroCorrection = speeduinoResponse[98];
+  currentStatus.ASEValue = speeduinoResponse[99];
+  currentStatus.vss = ((speeduinoResponse[101] << 8) | (speeduinoResponse[100]));
+  currentStatus.gear = speeduinoResponse[102];
+  currentStatus.fuelPressure = speeduinoResponse[103];
+  currentStatus.oilPressure = speeduinoResponse[104];
+  currentStatus.wmiPW = speeduinoResponse[105];
+  currentStatus.status4 = speeduinoResponse[106];
   // currentStatus.vvt2Angle = speeduinoResponse[107];
   // currentStatus.vvt2TargetAngle = speeduinoResponse[108];
   // currentStatus.vvt2Duty = speeduinoResponse[109];
@@ -379,18 +484,11 @@ void processResponse()
   // currentStatus.nitrous_status = speeduinoResponse[117];
   // currentStatus.TS_SD_Status = speeduinoResponse[118];
   // currentStatus.fanDuty = speeduinoResponse[121];
-  // Serial1.print("oil=");
-  // Serial1.println(currentStatus.oilPressure);
-  // Serial1.print("o2=");
-  // Serial1.println(currentStatus.O2);
-  for(uint8_t i; i < RESPONSE_LEN; i++) {
-    speeduinoResponse[i] = NULL;
-  }
 }
 
 void clearRx()
 {
-  while (Serial2.available())
+  while (Serial2.available() > 0)
   {
     Serial2.read();
   }
@@ -402,9 +500,11 @@ int popHeader()
   if (Serial2.find('n'))
   {
     Serial1.println("Found N");
-    
-    if (Serial2.find(0x32)) {
-      while(!Serial2.available());
+
+    if (Serial2.find(0x32))
+    {
+      while (!Serial2.available())
+        ;
       Serial1.println("Return packetlen");
       return Serial2.read();
     }
@@ -415,13 +515,10 @@ int popHeader()
 int unfucked = 0;
 void requestData()
 {
-  if (serialState == SERIAL_STATE_NOTHING)
-  {
-    clearRx();
-    Serial2.write("n"); // Send n to request real time data
-    serialState = SERIAL_STATE_REQUESTED_DATA;
-    Serial1.println("requested data");
-  }
+
+  // clearRx();
+  Serial2.write("n"); // Send n to request real time data
+  Serial1.println("requested data");
 
   int nLength = popHeader();
   if (nLength > 0)
@@ -429,12 +526,10 @@ void requestData()
     Serial1.print("nLength=");
     Serial1.println(nLength);
 
-    
     uint8_t nRead = Serial2.readBytes(speeduinoResponse, nLength);
     Serial1.print("nRead=");
     Serial1.println(nRead);
 
-    serialState = SERIAL_STATE_NOTHING;
     if (nRead < nLength)
     {
       Serial1.println("nRead < nLength");
@@ -445,13 +540,6 @@ void requestData()
       screenState = SCREEN_STATE_NORMAL;
       resetTimeout();
       processResponse();
-      if (currentStatus.RPM > 5000) {
-        Serial1.print("Fuckup happened at ");
-        Serial1.println(unfucked);
-        Serial1.println("================ FUCKUP ===============");
-      } else {
-        unfucked++;
-      }
       requestFrame = true;
     }
   }
@@ -462,18 +550,23 @@ void requestData()
   }
 }
 
+void clearScreen()
+{
+  tft.fillScreen(ILI9341_BLACK);
+}
+
 void renderNoConnection()
 {
   tft.fillScreen(ILI9341_BLACK);
-
   tft.setTextSize(3);
-
   tft.setCursor(0, 0);
   tft.println("No Connection");
 }
 
 void renderNoData()
 {
+  clearScreen();
+  tft.setTextColor(ILI9341_LIGHTGREY);
   tft.setTextSize(4);
   tft.setCursor(0, 0);
   tft.println("No Data");
@@ -494,12 +587,12 @@ void render()
   tft.setTextColor(ILI9341_CYAN);
 
   int fuel = readFuel();
-  renderGauge("FUEL    ", fuel, 0, 100, fuel < 10 ? errorColors : okColors);
-  renderGauge("RPM     ", currentStatus.RPM, 500, 7000, currentStatus.RPM > 5500 ? errorColors : okColors);
+  renderGauge("FUEL    ", fuel, 0, 100, fuel < LIMIT_FUEL_LOWER ? errorColors : okColors);
+  renderGauge("RPM     ", currentStatus.RPM, 500, 7000, currentStatus.RPM > LIMIT_RPM_UPPER ? errorColors : okColors);
 
-  // int coolantF = (int)(((float)currentStatus.coolant) * 1.8 + 32);
-  renderGauge("COOLANT ", currentStatus.coolant, 50, 250, currentStatus.coolant > 215 ? errorColors : okColors);
-  renderGauge("OIL     ", currentStatus.oilPressure, 0, 60, currentStatus.oilPressure < 10 ? errorColors : okColors);
+  int coolantF = (int)(((float)currentStatus.coolant) * 1.8 + 32);
+  renderGauge("COOLANT ", coolantF, 50, 250, coolantF > LIMIT_COOLANT_UPPER ? errorColors : okColors);
+  renderGauge("OIL     ", currentStatus.oilPressure, 0, 60, currentStatus.oilPressure < LIMIT_OIL_LOWER ? errorColors : okColors);
   // renderGauge("VOLTS", )
   // tft.setTextColor(ILI9341_WHITE, BACKGROUND_COLOR);
   // float volts = currentStatus.battery10;
@@ -509,9 +602,11 @@ void render()
 
   int bottomPanelY = tft.getCursorY();
   tft.drawLine(WIDTH / 2, bottomPanelY, WIDTH / 2, HEIGHT, ILI9341_WHITE);
+  tft.drawLine(0, bottomPanelY, WIDTH, bottomPanelY, ILI9341_WHITE);
+
   tft.setTextSize(2);
 
-  bottomPanelY = bottomPanelY + 1;
+  bottomPanelY = bottomPanelY + 6;
   tft.setCursor(0, bottomPanelY);
   writeSecondaries(bottomPanelY);
   writeStatus(bottomPanelY);
@@ -556,7 +651,7 @@ void loop(void)
   {
     if (screenState != lastScreenState)
     {
-      tft.fillScreen(ILI9341_BLACK);
+      clearScreen();
     }
 
     // if we're going in between states, then
@@ -576,5 +671,4 @@ void loop(void)
 
   lastScreenState = screenState;
   requestFrame = false;
-  delay(250);
 }
